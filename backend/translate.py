@@ -14,7 +14,7 @@ NLLB_CODES = {
 }
 
 # Code words that students say in English, so we never translate them
-KEEP = ["print", "range", "len", "input", "append", "elif"]
+KEEP = ["if-else", "if/else", "print", "range", "len", "input", "append", "elif"]
 KEEP_RE = re.compile(r"\b(" + "|".join(KEEP) + r")\b", re.IGNORECASE)
 _tok = None
 _model = None
