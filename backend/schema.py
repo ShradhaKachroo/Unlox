@@ -198,23 +198,22 @@ class Scene(BaseModel):
     def check_scene(self):
         if self.type == "code_walkthrough":
             if not self.code or not self.code.strip():
-                if self.items and len(self.items) >= 2:
-                    self.type = "diagram"
-                else:
-                    safe_h = self.heading.replace('"', "'")
-                    self.code = f"# {safe_h}\nprint(\"{safe_h}\")"
-            lines = self.code.splitlines()
-            if len(lines) > 12:
-                self.code = "\n".join(lines[:12])
-            n = len(self.code.splitlines())
-
-            # Auto-clamp highlight_lines to valid 1-based range
-            if self.highlight_lines:
-                self.highlight_lines = [
-                    max(1, min(line, max(1, n))) for line in self.highlight_lines
-                ]
+                self.type = "diagram"
+                if not self.items:
+                    self.items = [self.heading, "Core Concept", "Key Takeaway"]
             else:
-                self.highlight_lines = [1]
+                lines = self.code.splitlines()
+                if len(lines) > 12:
+                    self.code = "\n".join(lines[:12])
+                n = len(self.code.splitlines())
+
+                # Auto-clamp highlight_lines to valid 1-based range
+                if self.highlight_lines:
+                    self.highlight_lines = [
+                        max(1, min(line, max(1, n))) for line in self.highlight_lines
+                    ]
+                else:
+                    self.highlight_lines = [1]
 
         elif self.type == "diagram":
             if not self.items:

@@ -11,7 +11,24 @@ MODEL = "phi3.5"
 MAX_ATTEMPTS = 3
 
 # ── Prompt version (keep in sync with api.py PROMPT_VERSION) ─────────────────
-PROMPT_VERSION = 5
+PROMPT_VERSION = 6
+
+def is_coding_topic(topic: str) -> bool:
+    import re
+    t = topic.lower().strip()
+    coding_terms = (
+        "python", "javascript", "typescript", "java", "c++", "cpp", "c#", "golang", "rust",
+        "html", "css", "sql", "bash", "shell", "coding", "code", "programming", "program",
+        "software", "developer", "function", "variable", "loop", "array", "pointer",
+        "algorithm", "dsa", "class", "async", "thread", "recursion", "stack", "queue",
+        "tree", "graph", "object oriented", "oop", "decorator", "generator", "data structure",
+        "syntax", "compiler", "git", "api", "backend", "frontend", "database", "query",
+        "debug", "terminal", "script", "json", "rest api", "docker", "kubernetes"
+    )
+    for term in coding_terms:
+        if re.search(rf"\b{re.escape(term)}\b", t):
+            return True
+    return False
 
 class PlanScene(BaseModel):
     type: Literal["title_card", "diagram", "code_walkthrough", "quiz"]
@@ -39,35 +56,26 @@ PAUSE_PER_SCENE = 0.6  # seconds gap after each scene's audio
 LEVEL_RULES = {
     "beginner": (
         "TARGET LEVEL: BEGINNER\n"
-        "Scene order (flexible, use as many as needed): "
-        "title_card → analogy diagram → simplest code (≤3 lines) → step-by-step trace diagram "
-        "→ common mistake code → another diagram showing why → summary code → review diagram → quiz.\n"
-        "- Start with an everyday analogy to build intuition before any code.\n"
+        "Tone: natural, engaging, intuitive, and encouraging.\n"
+        "- Explain naturally using everyday language, real-world analogies, and clear visual steps.\n"
+        "- DO NOT force computer programming code unless the topic is specifically about software coding. For topics like shapes, geometry, science, math, or general concepts, use visual 'diagram' scenes (with 2-4 descriptive item bullets) to explain properties, comparisons, and intuitive facts.\n"
+        "- If and only if the topic is specifically about computer programming, keep code ultra-simple (≤3 lines).\n"
         "- Define every term the first time you use it; assume zero prior knowledge.\n"
-        "- Code snippets: at most 3 lines of simple Python each.\n"
-        "- One single idea per scene, no compound explanations.\n"
-        "- Use friendly, encouraging tone.\n"
+        "- One single clear idea per scene.\n"
     ),
     "intermediate": (
         "TARGET LEVEL: INTERMEDIATE\n"
-        "Scene order (flexible, use as many as needed): "
-        "title_card → realistic code (≤6 lines) → how-it-works diagram → deep dive code → "
-        "edge-case diagram → mistake-and-fix code → performance tip diagram → advanced pattern code → quiz.\n"
-        "- Assume the learner already knows variables, loops, and functions.\n"
-        "- Skip elementary definitions; move straight to the interesting behaviour.\n"
-        "- Code: up to 6 lines per scene showing realistic patterns.\n"
-        "- Cover edge cases or Pythonic best practices explicitly.\n"
+        "- Realistic patterns, practical trade-offs, and clear visual breakdowns.\n"
+        "- If coding: show realistic code (≤6 lines), edge cases, and standard best practices.\n"
+        "- If non-coding: explore deeper mechanics, relationships, and problem-solving diagrams.\n"
         "- Tone: collegial, peer-to-peer.\n"
     ),
     "advanced": (
         "TARGET LEVEL: ADVANCED\n"
-        "Scene order (flexible, use as many as needed): "
-        "title_card → production pattern code (≤8 lines) → internal architecture / memory diagram → "
-        "algorithmic trade-offs & time complexity → high-throughput edge case code → optimization breakdown diagram → quiz.\n"
-        "- Assume deep knowledge of standard library, OOP, and data structures.\n"
-        "- Focus on runtime performance, memory layout, CPython internals, async/concurrency, and Big-O limits.\n"
-        "- Code: production-grade patterns (type hints, context managers, generators, concurrency).\n"
-        "- Tone: expert, technical, high-rigor engineering insight.\n"
+        "- High-rigor analysis, architectural trade-offs, deep system or mathematical mechanics.\n"
+        "- If coding: runtime internals, memory layout, concurrency, and production patterns.\n"
+        "- If non-coding: formal principles, advanced classifications, and edge-case proofs.\n"
+        "- Tone: expert, technical, engineering insight.\n"
     ),
 }
 
@@ -137,6 +145,7 @@ def get_system_prompt(
     simpler: bool = False,
     previous_question: Optional[str] = None,
     scene_count: Optional[int] = None,
+    is_coding: bool = False,
 ) -> tuple[str, int, int]:
     """Returns (system_prompt, scene_count, word_budget)."""
     if scene_count is None:
@@ -160,10 +169,51 @@ def get_system_prompt(
 
     narration_hint = (
         f"Write 3 to 5 clear, thorough sentences per scene narration (target {words_per_scene - 5} to {words_per_scene + 5} words per scene, totaling ~{word_budget} words). "
-        "Explain step-by-step with practical intuition, clear logic, and code walkthrough details so the learner has time to absorb the visual animations."
+        "Explain step-by-step with practical intuition, clear logic, and visual clarity so the learner has time to absorb the visual animations."
     )
 
-    prompt = f"""You write structured coding explainer lessons as JSON for an animated video engine.
+    if is_coding:
+        code_instruction = (
+            '- "code_walkthrough": Python code (max 3 lines for beginner, 6 lines for intermediate/advanced) in "code". '
+            'Use "highlight_lines" (1-based list). Use double quotes for strings.'
+        )
+        middle_scenes_example = """    {
+      "type": "diagram",
+      "heading": "Visual Concept Overview",
+      "items": ["Point 1: Key intuition", "Point 2: Core pattern", "Point 3: Real-world analogy"],
+      "narration": "Let's first visualize the foundational concept before looking at syntax.",
+      "mood": "thinking"
+    },
+    {
+      "type": "code_walkthrough",
+      "heading": "Code Implementation",
+      "code": "x = [1, 2, 3]\\nprint(len(x))",
+      "highlight_lines": [1],
+      "narration": "Here is the concise implementation showing how the elements work together.",
+      "mood": "curious"
+    },"""
+    else:
+        code_instruction = (
+            'CRITICAL NON-CODING TOPIC RULE:\n'
+            '- This topic is a general educational concept, NOT computer programming. DO NOT use "code_walkthrough" scenes and DO NOT include any code or programming syntax.\n'
+            '- Use visual "diagram" scenes (with 2–4 descriptive bullet items) to explain definitions, visual properties, shapes, and everyday examples naturally.'
+        )
+        middle_scenes_example = """    {
+      "type": "diagram",
+      "heading": "Visual Characteristics & Properties",
+      "items": ["Defining feature: How to identify it", "Key visual rule: Boundaries, sides, or symmetry", "Everyday comparison: Familiar real-world counterpart"],
+      "narration": "Notice the defining visual characteristics that distinguish this form from others.",
+      "mood": "thinking"
+    },
+    {
+      "type": "diagram",
+      "heading": "Everyday Real-World Examples",
+      "items": ["Where we see it in daily life", "Practical purpose and natural occurrence", "How to easily spot and recognize it"],
+      "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday objects.",
+      "mood": "curious"
+    },"""
+
+    prompt = f"""You write structured visual explainer lessons as JSON for an animated classroom learning player.
 Output exactly {scene_count} scenes total (including the quiz as the last scene).
 
 {level_rule}
@@ -171,9 +221,8 @@ Output exactly {scene_count} scenes total (including the quiz as the last scene)
 Rules:
 - Exactly {scene_count} scenes. The LAST scene MUST be type "quiz".
 - "title_card": scene 1 only. Has heading + 1-sentence hook narration.{context_rule}
-- "code_walkthrough": Python code (max {"3" if level == "beginner" else "6"} lines) in "code".
-  Use "highlight_lines" (1-based list). Use double quotes for strings.
-- "diagram": MUST have "items" array with 2–4 concrete step strings.
+{code_instruction}
+- "diagram": MUST have "items" array with 2–4 concrete visual points or steps.
 - "quiz" (LAST scene only): {{
     "question": one clear conceptual question, max 120 chars,
     "options": exactly 3–4 realistic, distinct choices (1 correct, 2–3 plausible distractors), 10–100 chars each. NEVER use generic placeholder text like 'Option 1',
@@ -181,7 +230,7 @@ Rules:
     "explanation": 1 concise sentence explaining why the correct answer is right, max 150 chars,
     "narration": reads the question aloud (same as question text)
   }}{prev_q_rule}
-- "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual code, diagram steps, or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
+- "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual diagram steps or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
 - "mood": one of "happy" | "thinking" | "excited" | "curious"
 
 JSON Schema:
@@ -196,29 +245,15 @@ JSON Schema:
       "narration": "...",
       "mood": "happy"
     }},
-    {{
-      "type": "code_walkthrough",
-      "heading": "...",
-      "code": "...",
-      "highlight_lines": [1],
-      "narration": "...",
-      "mood": "curious"
-    }},
-    {{
-      "type": "diagram",
-      "heading": "...",
-      "items": ["Step 1: ...", "Step 2: ...", "Step 3: ..."],
-      "narration": "...",
-      "mood": "thinking"
-    }},
+{middle_scenes_example}
     {{
       "type": "quiz",
       "heading": "Knowledge Check",
-      "question": "What does range(3) produce?",
-      "options": ["0, 1, 2", "1, 2, 3", "0, 1, 2, 3"],
+      "question": "What is the key takeaway?",
+      "options": ["Option A", "Option B", "Option C"],
       "correct_index": 0,
-      "explanation": "range(3) starts at 0 and stops before 3.",
-      "narration": "What does range(3) produce?",
+      "explanation": "Option A is correct.",
+      "narration": "What is the key takeaway?",
       "mood": "excited"
     }}
   ]
@@ -241,6 +276,8 @@ def plan_lesson(
     """Plan a lesson in English. Returns (lesson, source).
     source is 'llm' or 'fallback'.
     """
+    is_coding = is_coding_topic(topic)
+
     system_prompt, scene_count, word_budget = get_system_prompt(
         level=level,
         target_seconds=target_seconds,
@@ -250,15 +287,23 @@ def plan_lesson(
         simpler=simpler,
         previous_question=previous_question,
         scene_count=scene_count,
+        is_coding=is_coding,
     )
 
     words_per_scene = max(25, int(round(word_budget / scene_count)))
+
+    explanation_style = (
+        "explaining step-by-step with practical intuition, clear logic, diagrams, and clean code."
+        if is_coding else
+        "explaining naturally with intuitive real-world examples, visual diagrams, and clear concepts (NO programming code needed)."
+    )
+
     user_prompt = (
         f"Create an engaging visual lesson for topic: '{topic}'. Level: {level}. "
         f"Target duration is {target_seconds} seconds (~{target_seconds // 60}m {target_seconds % 60}s). "
         f"Output exactly {scene_count} scenes total (the last scene must be a quiz). "
         f"Write thorough, informative narration (~{words_per_scene} words per scene, totaling ~{word_budget} words across the lesson) "
-        "explaining step-by-step with practical intuition, clear logic, diagrams, and clean Python code."
+        f"{explanation_style}"
     )
 
     messages = [
@@ -288,6 +333,25 @@ def plan_lesson(
             )
             lesson = parse_lesson(r.message.content)
             lesson.level = level
+
+            # Guarantee: if topic is not about computer programming, sanitize any code into diagram scenes
+            if not is_coding:
+                for sc in lesson.scenes:
+                    if sc.type == "code_walkthrough":
+                        sc.type = "diagram"
+                        if not sc.items or len(sc.items) < 2:
+                            clean_items = []
+                            if sc.heading:
+                                clean_items.append(f"Concept: {sc.heading}")
+                            narration_sents = [s.strip() for s in sc.narration.split(".") if len(s.strip()) > 8]
+                            if narration_sents:
+                                clean_items.extend(narration_sents[:2])
+                            while len(clean_items) < 3:
+                                clean_items.append(f"Visual insight for {topic}")
+                            sc.items = clean_items[:4]
+                        sc.code = None
+                        sc.highlight_lines = None
+
             actual_words = _count_lesson_words(lesson)
             elapsed = round(time.time() - start, 1)
 

@@ -352,6 +352,65 @@ CURATED_2MIN_TOPICS = {
 
 def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> dict:
     clean_topic = topic.strip().title()
+    t_lower = topic.lower()
+    is_coding = any(k in t_lower for k in (
+        "python", "code", "coding", "program", "function", "variable", "loop", "array",
+        "pointer", "algorithm", "dsa", "class", "async", "thread", "sql", "recursion",
+        "stack", "tree", "graph", "object oriented", "oop", "decorator", "generator", "syntax"
+    ))
+
+    if not is_coding:
+        # 100% natural conceptual explanation without forced code
+        return {
+            "title": f"Exploring {clean_topic}",
+            "level": level,
+            "language": "en",
+            "scenes": [
+                {
+                    "type": "title_card",
+                    "heading": f"Introduction to {clean_topic}",
+                    "narration": f"Welcome to this visual lesson exploring {clean_topic}. Today we will explore what it is, its core characteristics, and how we recognize it all around us.",
+                    "mood": "happy",
+                },
+                {
+                    "type": "diagram",
+                    "heading": f"Core Properties & Visual Attributes",
+                    "items": [
+                        "Defining visual characteristics",
+                        "Key structural rules and boundaries",
+                        "How different variations relate",
+                    ],
+                    "narration": f"Let us look at the foundational properties of {clean_topic}. By examining its key structural features and attributes, we can easily understand how it is defined.",
+                    "mood": "thinking",
+                },
+                {
+                    "type": "diagram",
+                    "heading": f"Everyday Real-World Examples",
+                    "items": [
+                        "Common daily objects and patterns",
+                        "How to spot them in everyday life",
+                        "Why these forms and concepts matter",
+                    ],
+                    "narration": f"Notice where we encounter {clean_topic} in daily life. From everyday objects to nature and design, observing these forms makes the concepts intuitive and concrete.",
+                    "mood": "excited",
+                },
+                {
+                    "type": "quiz",
+                    "heading": f"{clean_topic} Knowledge Check",
+                    "question": f"What is the best way to understand and identify {clean_topic}?",
+                    "options": [
+                        "By observing its visual properties, structure, and real-world examples",
+                        "By memorizing abstract rules without visual intuition",
+                        "By assuming every variation has identical properties",
+                    ],
+                    "correct_index": 0,
+                    "answer_idx": 0,
+                    "explanation": f"Observing real-world examples and core visual attributes builds lasting intuitive understanding of {clean_topic}.",
+                    "narration": f"What is the best way to understand and identify {clean_topic}?",
+                    "mood": "happy",
+                },
+            ],
+        }
 
     if target_seconds >= 100:
         return {

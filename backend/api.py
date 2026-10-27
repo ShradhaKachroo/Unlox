@@ -22,7 +22,7 @@ from translate import translate_lesson, translate_text
 from tts import HERE, SUPPORTED, build_timing
 
 # ── Prompt version: bump whenever planner prompt changes ──────────────────────
-PROMPT_VERSION = 5  # Phase 5: slide-specific narration deduplication + PlanLesson schema
+PROMPT_VERSION = 6  # Phase 6: natural conceptual explanations without code for non-programming topics
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 OUT_DIR = os.path.join(HERE, "out")
