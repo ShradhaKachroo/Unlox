@@ -16,18 +16,16 @@ export async function fetchLessonWithTiming(lang = 'en'): Promise<Lesson> {
   }
   const lessonData = await lessonRes.json();
 
-  // 2. Fetch timing JSON (per scene: start, duration, audio, caption)
+  // 2. Fetch timing JSON for this language ONLY (don't fall back across languages
+  //    as that would apply English audio URLs to non-English narrations)
   let timingData: unknown = null;
   try {
-    let timingRes = await fetch(`/sample/timing_${lang}.json`);
-    if (!timingRes.ok) {
-      timingRes = await fetch('/sample/timing_en.json');
-    }
+    const timingRes = await fetch(`/sample/timing_${lang}.json`);
     if (timingRes.ok) {
       timingData = await timingRes.json();
     }
   } catch {
-    // Timing file is optional; graceful fallback
+    // Timing file is optional; graceful fallback with no audio
   }
 
   // 3. Merge timing into lesson scenes: scene i matches scene i
@@ -39,7 +37,8 @@ export async function fetchLessonWithTiming(lang = 'en'): Promise<Lesson> {
         return {
           ...scene,
           duration_ms: typeof tInfo.duration === 'number' ? Math.round(tInfo.duration * 1000) : scene.duration_ms,
-          audio_url: tInfo.audio ? `/sample/${tInfo.audio}` : scene.audio_url,
+          // Only apply audio_url if the timing has an actual audio file
+          ...(tInfo.audio ? { audio_url: `/sample/${tInfo.audio}` } : {}),
           caption: tInfo.caption || scene.caption || scene.narration,
         };
       }

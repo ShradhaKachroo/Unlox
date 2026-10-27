@@ -41,6 +41,7 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(false);
   const [audioBlocked, setAudioBlocked] = useState(false);
+  const audioBlockedRef = useRef(false);
 
   const totalDuration = getTotalDuration(lesson);
   const timeline = getTimelineState(lesson, T);
@@ -73,6 +74,10 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
   useEffect(() => {
     isMutedRef.current = isMuted;
   }, [isMuted]);
+
+  useEffect(() => {
+    audioBlockedRef.current = audioBlocked;
+  }, [audioBlocked]);
 
   useEffect(() => {
     speedRef.current = speed;
@@ -149,12 +154,24 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
     audio.preservesPitch = true;
 
     if (Number.isFinite(offsetSec) && offsetSec >= 0) {
-      try {
-        if (Math.abs(audio.currentTime - offsetSec) > 0.08) {
-          audio.currentTime = offsetSec;
+      if (audio.readyState >= 1) {
+        try {
+          if (Math.abs(audio.currentTime - offsetSec) > 0.08) {
+            audio.currentTime = offsetSec;
+          }
+        } catch {
+          // ignore seek error
         }
-      } catch {
-        // metadata might still be loading
+      } else {
+        const onLoaded = () => {
+          try {
+            audio.currentTime = offsetSec;
+          } catch {
+            // ignore
+          }
+          audio.removeEventListener('loadedmetadata', onLoaded);
+        };
+        audio.addEventListener('loadedmetadata', onLoaded);
       }
     }
 
@@ -236,7 +253,7 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
         audio.paused &&
         !audio.ended &&
         isPlayingRef.current &&
-        !audioBlocked
+        !audioBlockedRef.current
       ) {
         // Resume audio if it was temporarily paused or ready
         const maxAudioMs = audio.duration ? audio.duration * 1000 : scene.duration_ms;
@@ -255,7 +272,8 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying, audioBlocked, pauseAllAudio, playAudioForScene]);
+  }, [isPlaying, pauseAllAudio, playAudioForScene]);
+
 
   const pause = useCallback(() => {
     setIsPlaying(false);

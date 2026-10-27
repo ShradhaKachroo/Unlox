@@ -1,6 +1,11 @@
 import json
 import os
+import warnings
+from typing import Callable, Optional
 
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+import numpy as np
 import soundfile as sf
 import torch
 from kokoro_onnx import Kokoro
@@ -10,17 +15,19 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MODEL = os.path.join(HERE, "models", "kokoro-v1.0.onnx")
 VOICES = os.path.join(HERE, "models", "voices-v1.0.bin")
 
-PAUSE = 0.5  # seconds of silence after each scene
+# Speech speed & scene pacing (lower speed = speaks slower, duration increases)
+SPEECH_SPEED = 0.85
+# Pause between audio end and scene transition (gives learner breathing room)
+PAUSE = 0.8  # seconds
 
-# Mature, professional adult educator voices (replacing child-like hf_alpha)
 VOICE_PRESETS = {
     "en": {
-        "female": ("af_heart", "en-us"),  # Warm, articulate adult educator voice
-        "male": ("am_adam", "en-us"),     # Rich, clear adult male narrator
+        "female": ("af_heart", "en-us"),
+        "male": ("am_adam", "en-us"),
     },
     "hi": {
-        "female": ("hf_beta", "hi"),      # Mature Indian female voice
-        "male": ("hm_omega", "hi"),       # Resonant Indian male voice
+        "female": ("hf_beta", "hi"),
+        "male": ("hm_omega", "hi"),
     },
 }
 
@@ -30,8 +37,11 @@ MMS_MAP = {
 
 SUPPORTED = list(VOICE_PRESETS) + list(MMS_MAP)
 
+# Words-per-second calibrated for slower speech rate (0.85x)
+WORDS_PER_SEC = {"en": 1.95, "hi": 1.95, "kn": 1.40}
+
 _kokoro = None
-_mms = {}
+_mms: dict = {}
 
 
 def _get_kokoro():
@@ -44,80 +54,133 @@ def _get_kokoro():
 def _get_mms(language):
     if language not in _mms:
         name = MMS_MAP[language]
-        _mms[language] = (AutoTokenizer.from_pretrained(name), VitsModel.from_pretrained(name))
+        _mms[language] = (
+            AutoTokenizer.from_pretrained(name),
+            VitsModel.from_pretrained(name),
+        )
     return _mms[language]
 
 
-def make_audio(text, path, language="en", voice_gender="female"):
-    """Writes a WAV file with adult natural teacher voice and returns its length in seconds."""
+def make_audio(
+    text: str,
+    path: str,
+    language: str = "en",
+    voice_gender: str = "female",
+    speed: float = SPEECH_SPEED,
+) -> float:
+    """Synthesise text to WAV, trim silence, return duration in seconds."""
     if language in VOICE_PRESETS:
         gender_preset = VOICE_PRESETS[language]
-        voice_id, lang_code = gender_preset.get(voice_gender, gender_preset.get("female"))
-        samples, sr = _get_kokoro().create(text, voice=voice_id, speed=1.0, lang=lang_code)
+        voice_id, lang_code = gender_preset.get(voice_gender, gender_preset["female"])
+        samples, sr = _get_kokoro().create(text, voice=voice_id, speed=speed, lang=lang_code)
     elif language in MMS_MAP:
         tok, model = _get_mms(language)
-        torch.manual_seed(0)  # same text -> same audio length
+        torch.manual_seed(0)
         with torch.no_grad():
-            samples = model(**tok(text, return_tensors="pt")).waveform[0].numpy()
+            samples = model(**tok(text, return_tensors="pt"), speaking_rate=speed).waveform[0].numpy()
         sr = model.config.sampling_rate
     else:
         raise ValueError(f"unsupported language: {language}")
 
+    # Trim leading/trailing silence (amplitude < 0.01)
+    abs_samples = np.abs(samples)
+    mask = abs_samples > 0.01
+    if np.any(mask):
+        indices = np.where(mask)[0]
+        samples = samples[indices[0]: indices[-1] + 1]
+
+    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     sf.write(path, samples, sr)
     return len(samples) / sr
 
 
-def build_timing(lesson, language="en", voice="female", target_seconds: int = None, out_dir="out"):
-    """Audio first with smart duration pacing to match requested lesson target_seconds.
-    Guarantees every scene has ample time for voice narration, visual absorption,
-    and interactive quiz solving.
+def _sentence_chunks(text: str, audio_seconds: float, start: float) -> list[dict]:
+    """Split narration into per-sentence caption chunks timed by character share."""
+    import re
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    if not sentences:
+        return [{"text": text, "start": round(start, 3), "end": round(start + audio_seconds, 3)}]
+    total_chars = sum(len(s) for s in sentences)
+    chunks = []
+    t = start
+    for s in sentences:
+        share = len(s) / total_chars if total_chars else 1 / len(sentences)
+        dur = audio_seconds * share
+        chunks.append({"text": s, "start": round(t, 3), "end": round(t + dur, 3)})
+        t += dur
+    return chunks
+
+
+def build_timing(
+    lesson,
+    language: str = "en",
+    voice: str = "female",
+    file_prefix: str = None,
+    out_dir: str = "out",
+    scene_lang_suffix: str = None,
+    audio_url_fn: Optional[Callable[[int], str]] = None,
+    audio_filename_fn: Optional[Callable[[int], str]] = None,
+    speed: float = SPEECH_SPEED,
+    pause: float = PAUSE,
+) -> dict:
+    """Generate audio for each scene, return timing dict.
+
+    Audio files: out/<out_dir>/scene_<i>_<lang>.wav or custom filename.
+    Each scene: duration = audio_seconds + PAUSE.
     """
     out_path = os.path.join(HERE, out_dir)
     os.makedirs(out_path, exist_ok=True)
 
-    raw_scenes = []
-    for i, scene in enumerate(lesson.scenes):
-        wav = os.path.join(out_path, f"scene_{i}_{language}.wav")
-        seconds = make_audio(scene.narration, wav, language=language, voice_gender=voice)
-        raw_scenes.append({
-            "scene": i,
-            "audio": f"scene_{i}_{language}.wav",
-            "audio_seconds": round(seconds, 2),
-            "caption": scene.narration,
-            "type": getattr(scene, "type", ""),
-        })
+    lang_sfx = scene_lang_suffix or language
+    prefix = file_prefix or language
 
-    n = len(raw_scenes)
-    # Every scene requires at least audio_seconds + 0.8s buffer
-    min_durations = [s["audio_seconds"] + 0.8 for s in raw_scenes]
-    if raw_scenes and raw_scenes[-1]["type"] == "quiz" and (target_seconds or 0) >= 100:
-        min_durations[-1] = max(min_durations[-1], 16.0)
-
-    total_min = sum(min_durations)
-
-    durations = list(min_durations)
-    if target_seconds and target_seconds > total_min and n > 0:
-        extra = float(target_seconds - total_min)
-        # Distribute remaining extra time across all scenes for visual comprehension
-        per_scene = extra / n
-        for i in range(n):
-            durations[i] += per_scene
-
-    scenes = []
+    scenes_timing = []
     t = 0.0
-    for i, s in enumerate(raw_scenes):
-        dur = round(durations[i], 2)
-        scenes.append({
-            "scene": s["scene"],
-            "audio": s["audio"],
-            "audio_seconds": s["audio_seconds"],
-            "start": round(t, 2),
-            "duration": dur,
-            "caption": s["caption"],
-        })
-        t += dur
+    for i, scene in enumerate(lesson.scenes):
+        audio_name = audio_filename_fn(i) if audio_filename_fn else f"scene_{i}_{lang_sfx}.wav"
+        wav = os.path.join(out_path, audio_name)
+        audio_seconds = make_audio(scene.narration, wav, language=language, voice_gender=voice, speed=speed)
+        duration = round(audio_seconds + pause, 3)
 
-    timing = {"language": language, "voice": voice, "total_seconds": round(t, 2), "scenes": scenes}
+        audio_url = (
+            audio_url_fn(i) if audio_url_fn
+            else f"/audio/{prefix}/{audio_name}"
+        )
+
+        chunks = _sentence_chunks(scene.narration, audio_seconds, t)
+        scenes_timing.append({
+            "scene": i,
+            "audio": audio_name,
+            "audio_url": audio_url,
+            "audio_seconds": round(audio_seconds, 3),
+            "start": round(t, 3),
+            "duration": duration,
+            "caption": scene.narration,
+            "caption_chunks": chunks,
+        })
+        t += duration
+
+    total = round(t, 3)
+    timing = {
+        "language": language,
+        "voice": voice,
+        "total_seconds": total,
+        "scenes": scenes_timing,
+        "file_prefix": prefix,
+    }
+
+    if total > 150:
+        timing["warning"] = f"Total {total}s exceeds target."
+
+    # Write timing JSON files
+    timing_path = os.path.join(out_path, f"timing_{prefix}_{lang_sfx}.json")
+    with open(timing_path, "w", encoding="utf-8") as f:
+        json.dump(timing, f, indent=2, ensure_ascii=False)
+    # Direct timing.json for modular folder layout
+    with open(os.path.join(out_path, "timing.json"), "w", encoding="utf-8") as f:
+        json.dump(timing, f, indent=2, ensure_ascii=False)
+    # Legacy alias
     with open(os.path.join(out_path, f"timing_{language}.json"), "w", encoding="utf-8") as f:
         json.dump(timing, f, indent=2, ensure_ascii=False)
+
     return timing

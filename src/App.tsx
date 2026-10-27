@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Lesson } from './types/lesson';
 import { fetchLessonWithTiming } from './utils/loader';
+import { apiGetLesson } from './api/lessonApi';
 import { PlayerShell } from './player/PlayerShell';
 import { InputPage } from './pages/InputPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -37,6 +38,7 @@ export const App: React.FC = () => {
     const requestedView = params.get('view');
     const isCapture = params.get('capture') === '1';
     const lang = params.get('lang') || 'en';
+    const lessonId = params.get('lesson_id');
 
     if (requestedView !== 'player' && !isCapture) {
       setLoading(false);
@@ -46,9 +48,15 @@ export const App: React.FC = () => {
     const loadInitialLesson = async () => {
       try {
         setLoading(true);
-        const lesson = await fetchLessonWithTiming(lang);
+        let lesson: Lesson;
+        if (lessonId) {
+          lesson = await apiGetLesson(lessonId, lang);
+          setStatusBadge(`Lesson: ${lesson.title}`);
+        } else {
+          lesson = await fetchLessonWithTiming(lang);
+          setStatusBadge(`Offline Sample (${lesson.language.toUpperCase()})`);
+        }
         setCurrentLesson(lesson);
-        setStatusBadge(`Offline Sample (${lesson.language.toUpperCase()})`);
         setView('player');
       } catch (err) {
         setError(`Failed to load initial lesson: ${(err as Error).message}`);

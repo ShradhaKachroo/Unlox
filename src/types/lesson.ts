@@ -54,6 +54,8 @@ export interface Lesson {
   level: Level;
   language: string;
   scenes: Scene[];
+  source?: string;
+  error?: string;
 }
 
 export interface LessonTimingScene {

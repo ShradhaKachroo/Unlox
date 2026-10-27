@@ -5,6 +5,7 @@ interface ControlsProps {
   isMuted?: boolean;
   currentLanguage?: string;
   isRevoicing?: boolean;
+  voiceStatuses?: Record<string, string>;
   onPlay: () => void;
   onPause: () => void;
   onTogglePlay: () => void;
@@ -16,14 +17,11 @@ interface ControlsProps {
   onLanguageChange?: (lang: string) => void;
 }
 
+// Only languages the backend TTS models actually support
 const AVAILABLE_LANGUAGES = [
   { code: 'en', label: '🇬🇧 English' },
   { code: 'hi', label: '🇮🇳 हिन्दी (Hindi)' },
   { code: 'kn', label: '🇮🇳 ಕನ್ನಡ (Kannada)' },
-  { code: 'ta', label: '🇮🇳 தமிழ் (Tamil)' },
-  { code: 'te', label: '🇮🇳 తెలుగు (Telugu)' },
-  { code: 'bn', label: '🇮🇳 বাংলা (Bengali)' },
-  { code: 'mr', label: '🇮🇳 मराठी (Marathi)' },
 ];
 
 export const Controls: React.FC<ControlsProps> = ({
@@ -31,6 +29,7 @@ export const Controls: React.FC<ControlsProps> = ({
   isMuted = false,
   currentLanguage = 'en',
   isRevoicing = false,
+  voiceStatuses,
   onTogglePlay,
   onNext,
   onPrev,
@@ -145,41 +144,79 @@ export const Controls: React.FC<ControlsProps> = ({
 
         {/* Revoice Language Switcher */}
         {onLanguageChange && (
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              id="select-language"
-              className="control-btn"
-              value={currentLanguage}
-              onChange={(e) => onLanguageChange(e.target.value)}
-              disabled={isRevoicing}
-              style={{
-                ...buttonStyle,
-                appearance: 'none',
-                paddingRight: '28px',
-                background: 'rgba(30, 41, 59, 0.85)',
-                border: '1.5px solid rgba(56, 189, 248, 0.4)',
-                color: '#38bdf8',
-                cursor: isRevoicing ? 'wait' : 'pointer',
-              }}
-              title="Revoice lesson in Indian regional languages"
-            >
-              {AVAILABLE_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#ffffff' }}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
-            <span
-              style={{
-                position: 'absolute',
-                right: '10px',
-                pointerEvents: 'none',
-                fontSize: '10px',
-                color: '#38bdf8',
-              }}
-            >
-              ▼
-            </span>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <select
+                id="select-language"
+                className="control-btn"
+                value={currentLanguage}
+                onChange={(e) => onLanguageChange(e.target.value)}
+                disabled={isRevoicing}
+                style={{
+                  ...buttonStyle,
+                  appearance: 'none',
+                  paddingRight: '28px',
+                  background: isRevoicing ? 'rgba(14, 165, 233, 0.1)' : 'rgba(30, 41, 59, 0.85)',
+                  border: isRevoicing ? '1.5px solid rgba(56, 189, 248, 0.8)' : '1.5px solid rgba(56, 189, 248, 0.4)',
+                  color: '#38bdf8',
+                  cursor: isRevoicing ? 'wait' : 'pointer',
+                  opacity: isRevoicing ? 0.7 : 1,
+                  transition: 'all 0.2s ease',
+                }}
+                title="Switch lesson language (English, Hindi, Kannada)"
+              >
+                {AVAILABLE_LANGUAGES.map((lang) => {
+                  const status = voiceStatuses?.[lang.code];
+                  let statusBadge = '';
+                  if (status === 'ready') statusBadge = '✓ Ready';
+                  else if (status === 'generating') statusBadge = '⏳ Generating...';
+                  else if (status === 'pending') statusBadge = '⏳ Queued';
+                  return (
+                    <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#ffffff' }}>
+                      {lang.label} {statusBadge ? `(${statusBadge})` : ''}
+                    </option>
+                  );
+                })}
+              </select>
+              <span
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  pointerEvents: 'none',
+                  fontSize: '10px',
+                  color: '#38bdf8',
+                }}
+              >
+                {isRevoicing ? (
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '10px',
+                      height: '10px',
+                      border: '2px solid rgba(56, 189, 248, 0.3)',
+                      borderTopColor: '#38bdf8',
+                      borderRadius: '50%',
+                      animation: 'spin 0.8s linear infinite',
+                    }}
+                  />
+                ) : '▼'}
+              </span>
+            </div>
+            {isRevoicing ? (
+              <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                Generating...
+              </span>
+            ) : voiceStatuses && (
+              <span style={{ fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', gap: '4px', alignItems: 'center' }}>
+                {voiceStatuses['en'] === 'ready' && voiceStatuses['hi'] === 'ready' && voiceStatuses['kn'] === 'ready' ? (
+                  <span style={{ color: '#4ade80' }} title="English, Hindi, and Kannada voices ready">EN · HI · KN Ready ✓</span>
+                ) : voiceStatuses['hi'] === 'generating' || voiceStatuses['kn'] === 'generating' ? (
+                  <span style={{ color: '#38bdf8' }}>⏳ Synthesizing voice...</span>
+                ) : (
+                  <span style={{ color: '#94a3b8' }}>Background voices in queue</span>
+                )}
+              </span>
+            )}
           </div>
         )}
 

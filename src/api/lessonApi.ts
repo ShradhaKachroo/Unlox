@@ -11,15 +11,23 @@ export interface GenerateParams {
   topic: string;
   level: Level;
   language: string;
-  target_length_seconds: number;
+  target_seconds?: number;
+  target_length_seconds?: number;
+  scene_count?: number;
   voice: 'female' | 'male';
   local_context: boolean;
+  generate_all_voices?: boolean;
 }
 
 export interface RevoiceParams {
   lesson_id: string;
   lang: string;
   voice: 'female' | 'male';
+}
+
+export interface VoicesStatusResponse {
+  voices: Record<string, 'ready' | 'generating' | 'pending' | 'available' | 'failed'>;
+  timing?: Record<string, any>;
 }
 
 /**
@@ -33,7 +41,10 @@ export async function apiGenerateLesson(params: GenerateParams): Promise<Lesson>
     const res = await fetch(`${API_BASE_URL}/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
+      body: JSON.stringify({
+        ...params,
+        generate_all_voices: true,
+      }),
       signal: controller.signal,
     });
 
@@ -90,19 +101,49 @@ export async function apiRevoiceLesson(params: RevoiceParams): Promise<Lesson> {
         lessonCache.set(cacheKey, validated.lesson);
         return validated.lesson;
       }
+      throw new Error(`Invalid lesson structure returned: ${(validated.errors || []).join(', ')}`);
+    } else {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Revoice failed (${res.status}): ${errText}`);
     }
-  } catch {
-    // Backend offline / timed out: proceed to local sample fallback
+  } catch (err) {
+    // Only fallback to sample lesson if the active lesson was already a sample
+    if (params.lesson_id.startsWith('sample')) {
+      try {
+        const fallbackLesson = await fetchLessonWithTiming(params.lang);
+        fallbackLesson.source = 'fallback';
+        fallbackLesson.error = `Revoice error: ${(err as Error).message}. Displaying sample lesson for ${params.lang.toUpperCase()}.`;
+        lessonCache.set(cacheKey, fallbackLesson);
+        return fallbackLesson;
+      } catch {
+        throw err;
+      }
+    }
+    // For user generated lessons, preserve the lesson and throw the error so the UI can report it
+    throw err;
+  }
+}
+
+/**
+ * Fetch a generated lesson by its deterministic ID and language.
+ */
+export async function apiGetLesson(lesson_id: string, lang = 'en'): Promise<Lesson> {
+  const cacheKey = `${lesson_id}_${lang}`;
+  if (lessonCache.has(cacheKey)) {
+    return lessonCache.get(cacheKey)!;
   }
 
-  // 2. Offline verified sample fallback: /sample/lesson_{lang}.json + timing_{lang}.json
-  try {
-    const fallbackLesson = await fetchLessonWithTiming(params.lang);
-    lessonCache.set(cacheKey, fallbackLesson);
-    return fallbackLesson;
-  } catch (err) {
-    throw new Error(`No translation available for ${params.lang.toUpperCase()}: ${(err as Error).message}`);
+  const res = await fetch(`${API_BASE_URL}/lesson/${lesson_id}/${lang}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load lesson ${lesson_id} [${lang}]: server returned ${res.status}`);
   }
+  const data = await res.json();
+  const validated = validateLesson(data);
+  if (validated.ok && validated.lesson) {
+    lessonCache.set(cacheKey, validated.lesson);
+    return validated.lesson;
+  }
+  throw new Error(`Invalid lesson structure: ${(validated.errors || []).join(', ')}`);
 }
 
 /**
@@ -111,3 +152,15 @@ export async function apiRevoiceLesson(params: RevoiceParams): Promise<Lesson> {
 export function clearLessonCache(): void {
   lessonCache.clear();
 }
+
+/**
+ * Fetch available/ready voice statuses for a lesson.
+ */
+export async function apiGetVoices(lessonId: string): Promise<VoicesStatusResponse> {
+  const res = await fetch(`${API_BASE_URL}/lesson/${lessonId}/voices`);
+  if (!res.ok) {
+    throw new Error(`Failed to fetch voices for ${lessonId}: status ${res.status}`);
+  }
+  return await res.json();
+}
+

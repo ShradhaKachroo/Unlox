@@ -27,7 +27,7 @@ export const InputPage: React.FC<InputPageProps> = ({
   onOpenLibrary,
   onOpenStudyPlan,
   initialTopic = '',
-  initialDuration = 45,
+  initialDuration = 105,
 }) => {
   const { settings } = useSettings();
   const [topic, setTopic] = useState(initialTopic);
@@ -59,7 +59,7 @@ export const InputPage: React.FC<InputPageProps> = ({
         topic: topic.trim(),
         level,
         language,
-        target_length_seconds: targetLength,
+        target_seconds: targetLength,
         voice: settings.voice,
         local_context: localContext,
       });
@@ -325,7 +325,7 @@ export const InputPage: React.FC<InputPageProps> = ({
                   marginBottom: '8px',
                 }}
               >
-                Voice Language
+                Initial Language
               </label>
               <select
                 id="language-select"
@@ -349,6 +349,9 @@ export const InputPage: React.FC<InputPageProps> = ({
                   </option>
                 ))}
               </select>
+              <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '6px', lineHeight: 1.3 }}>
+                ⚡ English generates first for instant play; Hindi & Kannada follow right after in background.
+              </div>
             </div>
           </div>
 
@@ -373,7 +376,7 @@ export const InputPage: React.FC<InputPageProps> = ({
                   fontWeight: 700,
                 }}
               >
-                {targetLength} seconds {targetLength >= 100 ? '(2 min deep dive)' : '(rapid cuts)'}
+                {targetLength} seconds
               </span>
             </div>
 
@@ -395,9 +398,10 @@ export const InputPage: React.FC<InputPageProps> = ({
             {/* Duration Presets */}
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
               {[
-                { sec: 45, label: '⚡ 45s (5 Cuts)' },
-                { sec: 60, label: '⏱️ 60s (6 Cuts)' },
-                { sec: 120, label: '🎬 2 Min (8-10 Cuts + MCQ)' },
+                { sec: 45, label: '⚡ 45s (Fast)' },
+                { sec: 90, label: '🎬 1:30 min (Standard)' },
+                { sec: 105, label: '🎯 1:45 min (Optimal)' },
+                { sec: 120, label: '🎥 2:00 min (Deep Dive)' },
               ].map(({ sec, label }) => (
                 <button
                   key={sec}

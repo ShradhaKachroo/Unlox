@@ -171,9 +171,11 @@ export function validateLesson(raw: unknown): ValidationResult {
       if (options.length < 2) {
         options = ['Option A: Correct answer', 'Option B: Alternate choice', 'Option C: Another choice'];
       }
-      const answer_idx = typeof s.answer_idx === 'number' && s.answer_idx >= 0 && s.answer_idx < options.length
-        ? s.answer_idx
-        : 0;
+      // Backend uses both 'correct_index' and 'answer_idx' — check both
+      const rawIdx = typeof s.correct_index === 'number'
+        ? s.correct_index
+        : (typeof s.answer_idx === 'number' ? s.answer_idx : 0);
+      const answer_idx = rawIdx >= 0 && rawIdx < options.length ? rawIdx : 0;
       const explanation = typeof s.explanation === 'string' ? s.explanation.trim() : undefined;
 
       validatedScenes.push({
@@ -194,12 +196,17 @@ export function validateLesson(raw: unknown): ValidationResult {
     }
   });
 
+  const source = typeof obj.source === 'string' ? obj.source : undefined;
+  const error = typeof obj.error === 'string' ? obj.error : undefined;
+
   const validatedLesson: Lesson = {
     id,
     title,
     level,
     language,
     scenes: validatedScenes,
+    source,
+    error,
   };
 
   return { ok: true, lesson: validatedLesson };

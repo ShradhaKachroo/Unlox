@@ -11,7 +11,7 @@ import { SettingsModal } from './SettingsModal';
 import { useSettings } from '../context/useSettings';
 import { Blu } from '../mascot/Blu';
 import { getAnchor } from '../mascot/anchors';
-import { apiRevoiceLesson } from '../api/lessonApi';
+import { apiRevoiceLesson, apiGetVoices } from '../api/lessonApi';
 import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
@@ -33,6 +33,10 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [revoiceStatus, setRevoiceStatus] = useState<string | null>(null);
   const [revoiceError, setRevoiceError] = useState<string | null>(null);
+  const [readyToast, setReadyToast] = useState<string | null>(null);
+  const [voiceStatuses, setVoiceStatuses] = useState<Record<string, string>>(() => {
+    return (lesson as any).voices || { [lesson.language]: 'ready' };
+  });
   const [quality] = useState<QualityMode>(getInitialQuality);
   const { settings } = useSettings();
 
@@ -58,12 +62,78 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     isPause,
   } = usePlayer(lesson, false, settings.speed); // Passes speed setting to audio playbackRate
 
+  // Auto-pause when a quiz scene becomes the active scene
+  const pausedForQuizRef = React.useRef<number>(-1);
+  useEffect(() => {
+    if (
+      currentScene?.type === 'quiz' &&
+      isPlaying &&
+      pausedForQuizRef.current !== sceneIndex
+    ) {
+      pausedForQuizRef.current = sceneIndex;
+      pause();
+    }
+  }, [currentScene?.type, sceneIndex, isPlaying, pause]);
+
+  // Background voice readiness polling
+  useEffect(() => {
+    if (!lesson.id || lesson.id.startsWith('sample')) return;
+
+    let timer: any;
+    let isCancelled = false;
+
+    const poll = async () => {
+      try {
+        const data = await apiGetVoices(lesson.id);
+        if (isCancelled) return;
+
+        setVoiceStatuses((prev) => {
+          const next = { ...prev, ...data.voices };
+          // Check if any language just became ready that wasn't before
+          for (const [code, status] of Object.entries(data.voices)) {
+            if (status === 'ready' && prev[code] !== 'ready' && code !== lesson.language) {
+              const label = LANGUAGE_LABELS[code]?.name || code.toUpperCase();
+              setReadyToast(`🇮🇳 ${label} voice is ready! You can switch anytime.`);
+              setTimeout(() => setReadyToast(null), 4000);
+            }
+          }
+          return next;
+        });
+
+        // Continue polling until both Hindi and Kannada are ready (or failed)
+        const allSettled = ['en', 'hi', 'kn'].every((l) =>
+          data.voices[l] === 'ready' || data.voices[l] === 'failed'
+        );
+        if (!allSettled && !isCancelled) {
+          timer = setTimeout(poll, 2500);
+        }
+      } catch {
+        if (!isCancelled) {
+          timer = setTimeout(poll, 4000);
+        }
+      }
+    };
+
+    timer = setTimeout(poll, 1500);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
+  }, [lesson.id, lesson.language]);
+
   const handleLanguageChange = async (newLang: string) => {
     if (newLang === lesson.language) return;
 
     const targetLangLabel = LANGUAGE_LABELS[newLang]?.name || newLang.toUpperCase();
-    setRevoiceStatus(`Revoicing in ${targetLangLabel}...`);
+    const isReady = voiceStatuses[newLang] === 'ready';
+    setRevoiceStatus(isReady ? `Switching to ${targetLangLabel}...` : `Synthesizing ${targetLangLabel} voice...`);
     setRevoiceError(null);
+
+    const wasPlayingBefore = isPlaying;
+    if (isPlaying) {
+      pause();
+    }
 
     try {
       const revoiced = await apiRevoiceLesson({
@@ -71,6 +141,8 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         lang: newLang,
         voice: settings.voice,
       });
+
+      setVoiceStatuses((prev) => ({ ...prev, [newLang]: 'ready' }));
 
       // Keep same scene index and relative position
       const currentRelPos = sceneDuration > 0 ? localT / sceneDuration : 0;
@@ -83,7 +155,11 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
       }
       setTimeout(() => {
         seek(targetGlobalT);
-      }, 50);
+        // Play as soon as we get the voice if user was playing
+        if (wasPlayingBefore) {
+          play();
+        }
+      }, 80);
 
       setRevoiceStatus(null);
     } catch (err) {
@@ -342,7 +418,31 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         </div>
       </header>
 
-      {/* Main 16:9 Viewport Stage Area */}
+      {/* Fallback Notice Banner */}
+      {(lesson.source === 'fallback' || lesson.error) && (
+        <div
+          id="fallback-warning-banner"
+          style={{
+            width: '100%',
+            background: 'linear-gradient(90deg, #ea580c 0%, #c2410c 100%)',
+            color: '#ffffff',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+            zIndex: 10,
+          }}
+        >
+          <span>⚠️</span>
+          <span>
+            {lesson.error || 'Running in offline fallback mode (LLM returned verified fallback lesson).'}
+          </span>
+        </div>
+      )}
       <main
         style={{
           flex: 1,
@@ -356,6 +456,106 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           overflow: 'hidden',
         }}
       >
+        {/* Voice Ready Toast */}
+        {readyToast && (
+          <div
+            id="voice-ready-toast"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 100,
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%)',
+              border: '1.5px solid #34d399',
+              borderRadius: '30px',
+              padding: '10px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(52, 211, 153, 0.35)',
+              backdropFilter: 'blur(10px)',
+              color: '#ffffff',
+              fontSize: '13px',
+              fontWeight: 700,
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>✨</span>
+            <span>{readyToast}</span>
+          </div>
+        )}
+
+        {/* Revoice Loading Toast */}
+        {revoiceStatus && (
+          <div
+            id="revoice-loading-toast"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 100,
+              background: 'rgba(15, 23, 42, 0.92)',
+              border: '1.5px solid #0284c7',
+              borderRadius: '30px',
+              padding: '10px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(2, 132, 199, 0.3)',
+              backdropFilter: 'blur(10px)',
+              color: '#38bdf8',
+              fontSize: '13px',
+              fontWeight: 700,
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>🎙️</span>
+            <span>{revoiceStatus}</span>
+          </div>
+        )}
+
+        {/* Revoice Error Toast */}
+        {revoiceError && (
+          <div
+            id="revoice-error-toast"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 100,
+              background: 'rgba(24, 15, 15, 0.95)',
+              border: '1.5px solid #ef4444',
+              borderRadius: '30px',
+              padding: '10px 22px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
+              backdropFilter: 'blur(10px)',
+              color: '#f87171',
+              fontSize: '13px',
+              fontWeight: 700,
+            }}
+          >
+            <span>⚠️ {revoiceError}</span>
+            <button
+              onClick={() => setRevoiceError(null)}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#f87171',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '14px',
+                marginLeft: '6px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <Stage>
           {currentScene ? (
             <SceneRenderer
@@ -472,76 +672,6 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           </div>
         )}
 
-        {/* Revoice Loading Status Banner */}
-        {revoiceStatus && (
-          <div
-            id="banner-revoice-status"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.95) 0%, rgba(126, 34, 206, 0.98) 100%)',
-              color: '#ffffff',
-              padding: '10px 22px',
-              borderRadius: '9999px',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.5)',
-              border: '1.5px solid #c084fc',
-              fontWeight: 700,
-              fontSize: '13px',
-              zIndex: 60,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            <span style={{ fontSize: '15px' }}>🎙️</span>
-            <span>{revoiceStatus}</span>
-          </div>
-        )}
-
-        {/* Revoice Error Banner (Dismissible) */}
-        {revoiceError && (
-          <div
-            id="banner-revoice-error"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.98) 100%)',
-              color: '#ffffff',
-              padding: '10px 20px',
-              borderRadius: '9999px',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 25px rgba(239, 68, 68, 0.4)',
-              border: '1.5px solid #f87171',
-              fontWeight: 600,
-              fontSize: '13px',
-              zIndex: 60,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-            }}
-          >
-            <span>⚠️ {revoiceError}</span>
-            <button
-              onClick={() => setRevoiceError(null)}
-              style={{
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                color: '#ffffff',
-                borderRadius: '50%',
-                width: '20px',
-                height: '20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '11px',
-              }}
-              title="Dismiss error"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
         <DebugOverlay
           visible={showDebug}
           T={T}
@@ -596,6 +726,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             isMuted={isMuted}
             currentLanguage={lesson.language}
             isRevoicing={!!revoiceStatus}
+            voiceStatuses={voiceStatuses}
             onPlay={play}
             onPause={pause}
             onTogglePlay={togglePlay}
