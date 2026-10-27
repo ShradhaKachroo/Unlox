@@ -15,6 +15,32 @@ from playwright.sync_api import sync_playwright
 from tts import HERE
 
 
+import urllib.request
+
+
+def _find_active_player_url(candidate: str = None) -> str:
+    """Probe candidate URLs and return the first one serving HTTP 200."""
+    candidates = [candidate] if candidate else []
+    candidates += [
+        "http://localhost:5174",
+        "http://localhost:5173",
+        "http://127.0.0.1:5174",
+        "http://127.0.0.1:5173",
+        "http://localhost:5175",
+    ]
+    for c in candidates:
+        if not c:
+            continue
+        try:
+            req = urllib.request.Request(c.rstrip("/"), headers={"User-Agent": "export-probe"})
+            with urllib.request.urlopen(req, timeout=1.0) as res:
+                if res.status == 200:
+                    return c.rstrip("/")
+        except Exception:
+            continue
+    return candidate or "http://localhost:5174"
+
+
 def _srt_time(sec: float) -> str:
     ms = int(round(sec * 1000))
     h, ms = divmod(ms, 3_600_000)
@@ -33,15 +59,19 @@ def export_audio_and_srt(
     Returns (wav_path, srt_path, duration_seconds).
     """
     out_path = os.path.join(HERE, out_dir)
+    os.makedirs(out_path, exist_ok=True)
     prefix = timing_prefix or language
+    lesson_id_part = prefix.split("_")[0] if "_" in prefix else ""
 
     # Find timing file
     candidates = [
         os.path.join(out_path, f"timing_{prefix}.json"),
         os.path.join(out_path, "timing.json"),
         os.path.join(out_path, f"timing_{language}.json"),
-        os.path.join(HERE, "out", "lessons", prefix.split("_")[0], language, "timing.json") if "_" in prefix else None,
+        os.path.join(HERE, "out", "lessons", lesson_id_part, language, "timing.json") if lesson_id_part else None,
+        os.path.join(HERE, "out", "lessons", lesson_id_part, language, "audio", "timing.json") if lesson_id_part else None,
         os.path.join(HERE, "out", f"timing_{language}.json"),
+        os.path.join(HERE, "..", "public", "sample", f"timing_{language}.json"),
     ]
     timing_file = next((c for c in candidates if c and os.path.exists(c)), None)
     if not timing_file:
@@ -55,15 +85,16 @@ def export_audio_and_srt(
     sample_rate = None
 
     for n, scene in enumerate(timing["scenes"], start=1):
-        base_audio = os.path.basename(scene["audio"])
-        lesson_id_part = prefix.split("_")[0] if "_" in prefix else ""
+        raw_audio = scene.get("audio") or f"scene_{n-1}_{language}.wav"
+        base_audio = os.path.basename(raw_audio) if raw_audio else f"scene_{n-1}.wav"
         candidates = [
-            os.path.join(out_path, scene["audio"]),
+            os.path.join(out_path, raw_audio) if raw_audio else None,
             os.path.join(out_path, base_audio),
             os.path.join(out_path, f"scene_{n-1}_{language}.wav"),
             os.path.join(os.path.dirname(timing_file), "audio", base_audio),
             os.path.join(HERE, "out", "lessons", lesson_id_part, language, "audio", base_audio),
             os.path.join(HERE, "out", lesson_id_part, f"scene_{n-1}_{language}.wav"),
+            os.path.join(HERE, "..", "public", "sample", base_audio),
         ]
         wav_path = next((c for c in candidates if c and os.path.exists(c)), None)
         if wav_path:
@@ -111,8 +142,14 @@ def export_audio_and_srt(
 
 def _launch_browser(p):
     """Launch headless Chromium, fallback to installed local binary."""
+    args = [
+        "--autoplay-policy=no-user-gesture-required",
+        "--disable-background-timer-throttling",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-renderer-backgrounding",
+    ]
     try:
-        return p.chromium.launch(headless=True)
+        return p.chromium.launch(headless=True, args=args)
     except Exception:
         local_app = os.environ.get("LOCALAPPDATA", "")
         for sub in [
@@ -121,13 +158,13 @@ def _launch_browser(p):
         ]:
             exe = os.path.join(local_app, "ms-playwright", *sub)
             if os.path.exists(exe):
-                return p.chromium.launch(executable_path=exe, headless=True)
+                return p.chromium.launch(executable_path=exe, headless=True, args=args)
         raise
 
 
 def export_mp4(
     language: str,
-    player_url: str = "http://localhost:5173",
+    player_url: str = "http://localhost:5174",
     out_dir: str = "out",
     timing_prefix: str = None,
     lesson_id: str = None,
@@ -136,14 +173,18 @@ def export_mp4(
     Returns (mp4_path, srt_path, wav_path, total_seconds, stage_seconds).
     """
     out_path = os.path.join(HERE, out_dir)
+    os.makedirs(out_path, exist_ok=True)
     prefix = timing_prefix or language
+    lid = lesson_id or (prefix.split("_")[0] if "_" in prefix else "")
 
     candidates = [
         os.path.join(out_path, f"timing_{prefix}.json"),
         os.path.join(out_path, "timing.json"),
-        os.path.join(HERE, "out", "lessons", lesson_id or "", language, "timing.json") if lesson_id else None,
+        os.path.join(HERE, "out", "lessons", lid, language, "timing.json") if lid else None,
+        os.path.join(HERE, "out", "lessons", lid, language, "audio", "timing.json") if lid else None,
         os.path.join(out_path, f"timing_{language}.json"),
         os.path.join(HERE, "out", f"timing_{language}.json"),
+        os.path.join(HERE, "..", "public", "sample", f"timing_{language}.json"),
     ]
     timing_file = next((c for c in candidates if c and os.path.exists(c)), None)
     if not timing_file:
@@ -163,7 +204,8 @@ def export_mp4(
     t_start = time.time()
     stage_seconds: dict = {}
 
-    lid = lesson_id or ""
+    active_player = _find_active_player_url(player_url)
+
     with tempfile.TemporaryDirectory() as temp_dir:
         t_capture = time.time()
         with sync_playwright() as p:
@@ -174,9 +216,9 @@ def export_mp4(
                 record_video_size={"width": 1280, "height": 720},
             )
             page = context.new_page()
-            url = f"{player_url.rstrip('/')}/?capture=1&lang={language}&lesson_id={lid}"
+            url = f"{active_player}/?capture=1&lang={language}&lesson_id={lid}"
             try:
-                page.goto(url)
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
             except Exception as e:
                 browser.close()
                 raise RuntimeError(
@@ -196,7 +238,7 @@ def export_mp4(
                     "Ensure the frontend is running and the page is in capture mode."
                 ) from e
 
-            time.sleep(0.3)
+            time.sleep(0.5)
             video_ref = page.video
             page.close()
             context.close()
@@ -215,8 +257,12 @@ def export_mp4(
             "-i", wav_path,
             "-t", str(total_seconds),
             "-c:v", "libx264",
+            "-preset", "fast",
+            "-crf", "22",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
+            "-b:a", "192k",
+            "-shortest",
             mp4_path,
         ]
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -227,6 +273,6 @@ def export_mp4(
     stage_seconds["total"] = round(time.time() - t_start, 1)
     print(
         f"[export] capture: {stage_seconds['capture']}s | ffmpeg: {stage_seconds['ffmpeg']}s"
-        f" | total: {stage_seconds['total']}s → {mp4_path}"
+        f" | total: {stage_seconds['total']}s -> {mp4_path}"
     )
     return mp4_path, srt_path, wav_path, total_seconds, stage_seconds

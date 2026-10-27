@@ -14,7 +14,7 @@ MAX_ATTEMPTS = 3
 PROMPT_VERSION = 4
 
 # ── Words-per-second (calibrated for 0.85x speech rate) ───────────────────────
-WORDS_PER_SEC = {"en": 1.95, "hi": 1.95, "kn": 1.40}
+WORDS_PER_SEC = {"en": 1.75, "hi": 1.75, "kn": 1.75}
 PAUSE_PER_SCENE = 0.6  # seconds gap after each scene's audio
 
 # ── Level rules ───────────────────────────────────────────────────────────────

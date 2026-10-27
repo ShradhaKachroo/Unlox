@@ -310,7 +310,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve audio with no-store so browsers never reuse old audio files
+def _get_media_type(filename: str) -> str:
+    if filename.endswith(".mp4"):
+        return "video/mp4"
+    if filename.endswith(".srt"):
+        return "text/plain"
+    if filename.endswith(".json"):
+        return "application/json"
+    return "audio/wav"
+
+
+# Serve audio & media with no-store so browsers never reuse old files
 @app.get("/audio/{lesson_id}/{lang}/{filename}")
 def serve_lang_audio(lesson_id: str, lang: str, filename: str):
     paths = [
@@ -320,10 +330,10 @@ def serve_lang_audio(lesson_id: str, lang: str, filename: str):
     ]
     for p in paths:
         if os.path.exists(p):
-            resp = FileResponse(p, media_type="audio/wav")
+            resp = FileResponse(p, media_type=_get_media_type(filename))
             resp.headers["Cache-Control"] = "no-store"
             return resp
-    raise HTTPException(404, f"Audio not found: {lesson_id}/{lang}/{filename}")
+    raise HTTPException(404, f"Media not found: {lesson_id}/{lang}/{filename}")
 
 
 @app.get("/audio/{lesson_id}/{filename}")
@@ -331,7 +341,7 @@ def serve_audio(lesson_id: str, filename: str):
     # 1. Direct file in out/<lesson_id>/<filename>
     legacy_path = os.path.join(OUT_DIR, lesson_id, filename)
     if os.path.exists(legacy_path):
-        resp = FileResponse(legacy_path, media_type="audio/wav")
+        resp = FileResponse(legacy_path, media_type=_get_media_type(filename))
         resp.headers["Cache-Control"] = "no-store"
         return resp
 
@@ -340,11 +350,11 @@ def serve_audio(lesson_id: str, filename: str):
     if os.path.exists(lesson_root):
         for root, _, files in os.walk(lesson_root):
             if filename in files:
-                resp = FileResponse(os.path.join(root, filename), media_type="audio/wav")
+                resp = FileResponse(os.path.join(root, filename), media_type=_get_media_type(filename))
                 resp.headers["Cache-Control"] = "no-store"
                 return resp
 
-    raise HTTPException(404, f"Audio not found: {lesson_id}/{filename}")
+    raise HTTPException(404, f"Media not found: {lesson_id}/{filename}")
 
 
 @app.get("/health")
@@ -604,6 +614,11 @@ def get_voices(lesson_id: str):
 def get_lesson(lesson_id: str, lang: str = "en"):
     if lang not in SUPPORTED:
         raise HTTPException(400, f"language must be one of {SUPPORTED}")
+    if lesson_id == "sample" or lesson_id.startswith("sample"):
+        sample_file = os.path.join(HERE, "..", "public", "sample", f"lesson_{lang}.json")
+        if os.path.exists(sample_file):
+            with open(sample_file, "r", encoding="utf-8") as f:
+                return json.load(f)
     lang_lesson_file = os.path.join(OUT_DIR, "lessons", lesson_id, lang, "lesson.json")
     if os.path.exists(lang_lesson_file):
         with open(lang_lesson_file, "r", encoding="utf-8") as f:
@@ -611,23 +626,40 @@ def get_lesson(lesson_id: str, lang: str = "en"):
     return revoice(RevoiceRequest(lesson_id=lesson_id, lang=lang))
 
 
-# ── POST /export ───────────────────────────────────────────────────────────────
+# ── POST /export & GET /download ──────────────────────────────────────────────
 @app.post("/export")
 def export(req: ExportRequest):
     if req.language not in SUPPORTED:
         raise HTTPException(400, f"language must be one of {SUPPORTED}")
 
-    # Check if voice is ready (on disk or in cache)
-    lang_file = os.path.join(OUT_DIR, "lessons", req.lesson_id, req.language, "lesson.json")
-    cache = _get_cache()
-    vk = _voice_cache_key(req.lesson_id, req.language)
-    is_ready = os.path.exists(lang_file) or (cache.get(vk, {}).get("status") == "ready")
+    # Handle sample lesson fallback
+    if req.lesson_id == "sample" or req.lesson_id.startswith("sample"):
+        sample_dir = os.path.join(OUT_DIR, "sample")
+        os.makedirs(sample_dir, exist_ok=True)
+        pub_sample = os.path.join(HERE, "..", "public", "sample")
+        if os.path.exists(pub_sample):
+            import shutil
+            for f in os.listdir(pub_sample):
+                src_f = os.path.join(pub_sample, f)
+                dst_f = os.path.join(sample_dir, f)
+                if not os.path.exists(dst_f):
+                    try:
+                        shutil.copyfile(src_f, dst_f)
+                    except Exception:
+                        pass
+        is_ready = True
+    else:
+        # Check if voice is ready (on disk or in cache)
+        lang_file = os.path.join(OUT_DIR, "lessons", req.lesson_id, req.language, "lesson.json")
+        cache = _get_cache()
+        vk = _voice_cache_key(req.lesson_id, req.language)
+        is_ready = os.path.exists(lang_file) or (cache.get(vk, {}).get("status") == "ready")
 
     if not is_ready:
         raise HTTPException(404, f"Voice for {req.language} not ready yet")
 
     audio_subdir = os.path.join("out", req.lesson_id)
-    timing_prefix = f"{req.lesson_id}_{req.language}"
+    timing_prefix = f"{req.lesson_id}_{req.language}" if not req.lesson_id.startswith("sample") else "sample_en"
     try:
         mp4_path, srt_path, wav_path, total_seconds, stage_seconds = export_mp4(
             req.language,
@@ -658,8 +690,40 @@ def export(req: ExportRequest):
         "ok": True,
         "language": req.language,
         "mp4_url": rel(mp4_path),
+        "download_url": f"/download/{req.lesson_id}/{req.language}",
         "srt_url": rel(srt_path),
         "wav_url": rel(wav_path),
         "total_seconds": total_seconds,
         "stage_seconds": stage_seconds,
     }
+
+
+@app.get("/download/{lesson_id}/{lang}")
+def download_video(lesson_id: str, lang: str = "en"):
+    candidates = [
+        os.path.join(OUT_DIR, "lessons", lesson_id, lang, "video.mp4"),
+        os.path.join(OUT_DIR, lesson_id, f"lesson_{lesson_id}_{lang}.mp4"),
+        os.path.join(OUT_DIR, lesson_id, f"lesson_{lang}.mp4"),
+        os.path.join(OUT_DIR, "sample", "lesson_sample_en.mp4"),
+    ]
+    for p in candidates:
+        if os.path.exists(p):
+            title = "lesson"
+            meta_file = os.path.join(OUT_DIR, "lessons", lesson_id, lang, "lesson.json")
+            if os.path.exists(meta_file):
+                try:
+                    with open(meta_file, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        t = data.get("title", "")
+                        if t:
+                            title = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in t.lower()).strip("_")
+                except Exception:
+                    pass
+            filename = f"{title}_{lang}.mp4"
+            return FileResponse(
+                p,
+                media_type="video/mp4",
+                filename=filename,
+                headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+            )
+    raise HTTPException(404, f"Exported MP4 video not found for {lesson_id} ({lang}). Please export first.")

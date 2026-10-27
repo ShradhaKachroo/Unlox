@@ -49,7 +49,7 @@ export const App: React.FC = () => {
       try {
         setLoading(true);
         let lesson: Lesson;
-        if (lessonId) {
+        if (lessonId && lessonId !== 'sample' && !lessonId.startsWith('sample')) {
           lesson = await apiGetLesson(lessonId, lang);
           setStatusBadge(`Lesson: ${lesson.title}`);
         } else {

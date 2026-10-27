@@ -15,6 +15,8 @@ interface ControlsProps {
   onToggleMute?: () => void;
   onOpenSettings?: () => void;
   onLanguageChange?: (lang: string) => void;
+  onExportMP4?: () => void;
+  isExporting?: boolean;
 }
 
 // Only languages the backend TTS models actually support
@@ -37,6 +39,8 @@ export const Controls: React.FC<ControlsProps> = ({
   onToggleMute,
   onOpenSettings,
   onLanguageChange,
+  onExportMP4,
+  isExporting = false,
 }) => {
   const buttonStyle: React.CSSProperties = {
     background: 'rgba(30, 41, 59, 0.7)',
@@ -235,6 +239,49 @@ export const Controls: React.FC<ControlsProps> = ({
           >
             <span>⚙️</span>
             <span>Preferences</span>
+          </button>
+        )}
+
+        {onExportMP4 && (
+          <button
+            id="btn-export-mp4"
+            className="control-btn"
+            onClick={onExportMP4}
+            disabled={isExporting}
+            style={{
+              ...buttonStyle,
+              background: isExporting
+                ? 'rgba(168, 85, 247, 0.25)'
+                : 'linear-gradient(135deg, rgba(147, 51, 234, 0.25) 0%, rgba(126, 34, 206, 0.35) 100%)',
+              borderColor: isExporting ? '#c084fc' : 'rgba(192, 132, 252, 0.5)',
+              color: '#f3e8ff',
+              boxShadow: '0 0 15px rgba(168, 85, 247, 0.2)',
+              cursor: isExporting ? 'wait' : 'pointer',
+              transition: 'all 0.2s ease',
+            }}
+            title="Download playable 720p MP4 of the full lesson with audio & captions"
+          >
+            {isExporting ? (
+              <>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '12px',
+                    height: '12px',
+                    border: '2px solid rgba(243, 232, 255, 0.3)',
+                    borderTopColor: '#f3e8ff',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                />
+                <span>Exporting 720p...</span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: '15px' }}>📥</span>
+                <span>Download MP4</span>
+              </>
+            )}
           </button>
         )}
       </div>

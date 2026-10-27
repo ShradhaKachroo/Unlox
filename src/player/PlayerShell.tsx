@@ -11,7 +11,7 @@ import { SettingsModal } from './SettingsModal';
 import { useSettings } from '../context/useSettings';
 import { Blu } from '../mascot/Blu';
 import { getAnchor } from '../mascot/anchors';
-import { apiRevoiceLesson, apiGetVoices } from '../api/lessonApi';
+import { apiRevoiceLesson, apiGetVoices, apiExportLesson, triggerFileDownload } from '../api/lessonApi';
 import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
@@ -29,11 +29,16 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   statusBadge,
   onLessonChange,
 }) => {
+  const isCapture = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('capture') === '1';
+
   const [showDebug, setShowDebug] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [revoiceStatus, setRevoiceStatus] = useState<string | null>(null);
   const [revoiceError, setRevoiceError] = useState<string | null>(null);
   const [readyToast, setReadyToast] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
   const [voiceStatuses, setVoiceStatuses] = useState<Record<string, string>>(() => {
     return (lesson as any).voices || { [lesson.language]: 'ready' };
   });
@@ -60,12 +65,13 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     totalDuration,
     currentScene,
     isPause,
-  } = usePlayer(lesson, false, settings.speed); // Passes speed setting to audio playbackRate
+  } = usePlayer(lesson, isCapture, settings.speed); // AutoPlay in headless capture mode
 
-  // Auto-pause when a quiz scene becomes the active scene
+  // Auto-pause when a quiz scene becomes the active scene (skip during automated capture)
   const pausedForQuizRef = React.useRef<number>(-1);
   useEffect(() => {
     if (
+      !isCapture &&
       currentScene?.type === 'quiz' &&
       isPlaying &&
       pausedForQuizRef.current !== sceneIndex
@@ -73,7 +79,31 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
       pausedForQuizRef.current = sceneIndex;
       pause();
     }
-  }, [currentScene?.type, sceneIndex, isPlaying, pause]);
+  }, [currentScene?.type, sceneIndex, isPlaying, pause, isCapture]);
+
+  // MP4 Export & Download Handler
+  const handleExportMP4 = async () => {
+    if (isExporting) return;
+    try {
+      setIsExporting(true);
+      setExportError(null);
+      setExportMessage('Combining rendered 720p scenes, voice-over & captions with FFmpeg...');
+      const res = await apiExportLesson(lesson.id || 'sample', lesson.language);
+      setExportMessage('Export complete! Starting video download...');
+      const downloadPath = res.download_url || res.mp4_url;
+      const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      const filename = `${cleanTitle}_${lesson.language}.mp4`;
+      triggerFileDownload(downloadPath, filename);
+      setTimeout(() => {
+        setIsExporting(false);
+        setExportMessage(null);
+      }, 4000);
+    } catch (err) {
+      console.error('Export failed:', err);
+      setExportError((err as Error).message);
+      setIsExporting(false);
+    }
+  };
 
   // Background voice readiness polling
   useEffect(() => {
@@ -213,6 +243,55 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   const sceneCount = lesson.scenes.length;
   const currentSceneNumber = sceneIndex + 1;
   const langInfo = LANGUAGE_LABELS[lesson.language] || { name: lesson.language, nativeName: lesson.language };
+  const isLessonFinished = !isCapture && totalDuration > 0 && T >= totalDuration - 250 && !isPlaying;
+
+  // Headless 1280x720 capture view for Playwright & FFmpeg export
+  if (isCapture) {
+    return (
+      <div
+        id="capture-root"
+        style={{
+          width: 1280,
+          height: 720,
+          position: 'relative',
+          overflow: 'hidden',
+          background: '#0B0F19',
+          margin: 0,
+          padding: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Stage>
+          {currentScene && (
+            <SceneRenderer
+              scene={currentScene}
+              t={localT}
+              duration={sceneDuration}
+              quality="high"
+            />
+          )}
+          {currentScene && (
+            <Blu
+              scene={currentScene}
+              t={localT}
+              duration={sceneDuration}
+              mood={currentScene.mood || 'happy'}
+              anchor={getAnchor(currentScene.type)}
+            />
+          )}
+        </Stage>
+        {currentScene && (
+          <CaptionBar
+            caption={currentScene.caption || currentScene.narration || ''}
+            language={lesson.language}
+            isPause={false}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -642,7 +721,210 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               </button>
             </div>
           )}
+          {/* End of Lesson Download & Celebration Card */}
+          {isLessonFinished && (
+            <div
+              id="overlay-lesson-finished"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(6, 10, 20, 0.9)',
+                backdropFilter: 'blur(12px)',
+                zIndex: 60,
+                padding: '24px',
+              }}
+            >
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(20, 16, 45, 0.99) 100%)',
+                  border: '2px solid rgba(168, 85, 247, 0.6)',
+                  borderRadius: '24px',
+                  padding: '36px 44px',
+                  color: '#ffffff',
+                  boxShadow: '0 25px 70px rgba(0, 0, 0, 0.8), 0 0 50px rgba(168, 85, 247, 0.35)',
+                  maxWidth: '560px',
+                  width: '100%',
+                  textAlign: 'center',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '18px',
+                }}
+              >
+                <div
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #a855f7 0%, #7e22ce 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '32px',
+                    boxShadow: '0 0 30px rgba(168, 85, 247, 0.6)',
+                  }}
+                >
+                  🎉
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em' }}>
+                    Lesson Completed!
+                  </div>
+                  <div style={{ fontSize: '15px', color: '#cbd5e1', marginTop: '6px', fontWeight: 600 }}>
+                    {lesson.title} ({langInfo.name})
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
+                    Your offline 720p HD MP4 video with complete voice-over and captions is ready for download.
+                  </div>
+                </div>
+
+                {/* Primary Download Button */}
+                <button
+                  id="btn-download-mp4-finish"
+                  onClick={handleExportMP4}
+                  disabled={isExporting}
+                  style={{
+                    width: '100%',
+                    background: isExporting
+                      ? 'rgba(168, 85, 247, 0.3)'
+                      : 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+                    border: '1.5px solid #c084fc',
+                    borderRadius: '14px',
+                    padding: '16px 24px',
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: '#ffffff',
+                    cursor: isExporting ? 'wait' : 'pointer',
+                    boxShadow: '0 8px 24px rgba(147, 51, 234, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {isExporting ? (
+                    <>
+                      <span
+                        style={{
+                          width: '18px',
+                          height: '18px',
+                          border: '2px solid rgba(255, 255, 255, 0.3)',
+                          borderTopColor: '#ffffff',
+                          borderRadius: '50%',
+                          animation: 'spin 0.8s linear infinite',
+                        }}
+                      />
+                      <span>Generating 720p MP4 Video...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ fontSize: '18px' }}>📥</span>
+                      <span>Download 720p MP4 Video</span>
+                    </>
+                  )}
+                </button>
+
+                {exportMessage && (
+                  <div style={{ fontSize: '12px', color: '#d8b4fe', fontStyle: 'italic' }}>
+                    {exportMessage}
+                  </div>
+                )}
+                {exportError && (
+                  <div style={{ fontSize: '12px', color: '#f87171' }}>
+                    ⚠️ {exportError}
+                  </div>
+                )}
+
+                {/* Secondary Actions */}
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '4px' }}>
+                  <button
+                    id="btn-replay-finish"
+                    onClick={replay}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(30, 41, 59, 0.8)',
+                      border: '1px solid rgba(71, 85, 105, 0.6)',
+                      borderRadius: '10px',
+                      padding: '10px 16px',
+                      color: '#cbd5e1',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    ↺ Replay Lesson
+                  </button>
+                  {onBackToInput && (
+                    <button
+                      id="btn-back-finish"
+                      onClick={onBackToInput}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(30, 41, 59, 0.8)',
+                        border: '1px solid rgba(71, 85, 105, 0.6)',
+                        borderRadius: '10px',
+                        padding: '10px 16px',
+                        color: '#cbd5e1',
+                        fontWeight: 600,
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ← Explore Topics
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </Stage>
+
+        {/* Floating Export Status Banner */}
+        {isExporting && (
+          <div
+            id="export-progress-banner"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 110,
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(30, 27, 75, 0.98) 100%)',
+              border: '1.5px solid #c084fc',
+              borderRadius: '30px',
+              padding: '12px 26px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.7), 0 0 30px rgba(168, 85, 247, 0.4)',
+              backdropFilter: 'blur(10px)',
+              color: '#f3e8ff',
+              fontSize: '13px',
+              fontWeight: 700,
+            }}
+          >
+            <span
+              style={{
+                display: 'inline-block',
+                width: '16px',
+                height: '16px',
+                border: '2px solid rgba(243, 232, 255, 0.3)',
+                borderTopColor: '#f3e8ff',
+                borderRadius: '50%',
+                animation: 'spin 0.8s linear infinite',
+              }}
+            />
+            <span>{exportMessage || 'Rendering 720p scenes, voice-over & captions...'}</span>
+          </div>
+        )}
 
         {/* Autoplay Browser Policy Fallback Banner */}
         {audioBlocked && (
@@ -736,6 +1018,8 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             onToggleMute={toggleMute}
             onOpenSettings={() => setShowSettings(true)}
             onLanguageChange={handleLanguageChange}
+            onExportMP4={handleExportMP4}
+            isExporting={isExporting}
           />
         </div>
       </footer>

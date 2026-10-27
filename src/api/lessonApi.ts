@@ -164,3 +164,65 @@ export async function apiGetVoices(lessonId: string): Promise<VoicesStatusRespon
   return await res.json();
 }
 
+export interface ExportResponse {
+  ok: boolean;
+  language: string;
+  mp4_url: string;
+  download_url?: string;
+  srt_url?: string;
+  wav_url?: string;
+  total_seconds: number;
+  stage_seconds?: Record<string, number>;
+}
+
+/**
+ * Trigger backend MP4 export (combines rendered scenes, voice-over, captions into 720p MP4)
+ */
+export async function apiExportLesson(lessonId: string, language = 'en'): Promise<ExportResponse> {
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5174';
+  const controller = new AbortController();
+  // Video recording runs for duration of lesson; set generous timeout (5 minutes)
+  const timeoutId = setTimeout(() => controller.abort(), 300000);
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lesson_id: lessonId,
+        language: language,
+        player_url: currentOrigin,
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      throw new Error(`Export failed (${res.status}): ${errText}`);
+    }
+    return await res.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
+/**
+ * Programmatically trigger browser file download for a URL
+ */
+export function triggerFileDownload(url: string, filename?: string): void {
+  const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+  const a = document.createElement('a');
+  a.href = fullUrl;
+  if (filename) {
+    a.download = filename;
+  }
+  a.target = '_blank';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+  }, 100);
+}
+

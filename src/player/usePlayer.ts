@@ -240,6 +240,9 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
         setIsPlaying(false);
         isPlayingRef.current = false;
         pauseAllAudio();
+        if (typeof window !== 'undefined') {
+          (window as any).__lessonDone = true;
+        }
         return;
       }
 
@@ -282,6 +285,9 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
   }, [pauseAllAudio]);
 
   const play = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      (window as any).__lessonDone = false;
+    }
     if (tRef.current >= totalDurationRef.current) {
       tRef.current = 0;
       setT(0);
