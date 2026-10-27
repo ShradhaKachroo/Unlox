@@ -16,6 +16,10 @@ declare global {
 export interface UsePlayerResult {
   T: number;
   isPlaying: boolean;
+  isMuted: boolean;
+  toggleMute: () => void;
+  audioBlocked: boolean;
+  unblockAudio: () => void;
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
@@ -35,6 +39,8 @@ export interface UsePlayerResult {
 export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
   const [T, setT] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioBlocked, setAudioBlocked] = useState(false);
 
   const totalDuration = getTotalDuration(lesson);
   const timeline = getTimelineState(lesson, T);
@@ -42,65 +48,125 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
 
   // Ref holders to keep RAF loop synchronous with latest state without teardowns
   const isPlayingRef = useRef(isPlaying);
-  isPlayingRef.current = isPlaying;
-
   const tRef = useRef(T);
-  tRef.current = T;
-
   const totalDurationRef = useRef(totalDuration);
-  totalDurationRef.current = totalDuration;
-
   const lessonRef = useRef(lesson);
-  lessonRef.current = lesson;
+  const isMutedRef = useRef(isMuted);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const currentAudioUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    tRef.current = T;
+  }, [T]);
+
+  useEffect(() => {
+    totalDurationRef.current = totalDuration;
+  }, [totalDuration]);
+
+  useEffect(() => {
+    lessonRef.current = lesson;
+  }, [lesson]);
+
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  // Preloaded audio elements map per scene index
+  const audioMapRef = useRef<Map<number, HTMLAudioElement>>(new Map());
+  const activeSceneIndexRef = useRef<number>(timeline.sceneIndex);
   const lastRafTimeRef = useRef<number | null>(null);
 
-  // Initialize persistent audio element
+  // Initialize and preload all scene audio tracks
   useEffect(() => {
-    if (typeof window !== 'undefined' && !audioRef.current) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      audioRef.current = audio;
-    }
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-    };
-  }, []);
+    const audioMap = audioMapRef.current;
 
-  // Update audio source when scene changes
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const audioUrl = currentScene?.audio_url;
-    if (audioUrl && audioUrl !== currentAudioUrlRef.current) {
-      currentAudioUrlRef.current = audioUrl;
-      audio.src = audioUrl;
-      audio.currentTime = timeline.localT / 1000;
-      if (isPlayingRef.current) {
-        audio.play().catch(() => {
-          // Graceful fallback for offline or blocked autoplay
-        });
-      }
-    } else if (!audioUrl && currentAudioUrlRef.current) {
-      currentAudioUrlRef.current = null;
+    // Teardown previous audios
+    audioMap.forEach((audio) => {
       audio.pause();
       audio.src = '';
-    }
-  }, [currentScene?.id, currentScene?.audio_url, timeline.localT]);
+    });
+    audioMap.clear();
 
-  // Master Clock: requestAnimationFrame loop with performance.now deltas
+    if (typeof window === 'undefined') return;
+
+    lesson.scenes.forEach((scene, idx) => {
+      if (scene.audio_url) {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = scene.audio_url;
+        audio.volume = 1.0;
+        audio.muted = isMutedRef.current;
+        audioMap.set(idx, audio);
+      }
+    });
+
+    return () => {
+      audioMap.forEach((audio) => {
+        audio.pause();
+        audio.src = '';
+      });
+      audioMap.clear();
+    };
+  }, [lesson]);
+
+  // Helper to pause all scene audios
+  const pauseAllAudio = useCallback(() => {
+    audioMapRef.current.forEach((audio) => {
+      if (!audio.paused) {
+        audio.pause();
+      }
+    });
+  }, []);
+
+  // Helper to play audio for a specific scene at an offset
+  const playAudioForScene = useCallback((sceneIdx: number, offsetSec = 0) => {
+    // Pause other scenes
+    audioMapRef.current.forEach((audio, idx) => {
+      if (idx !== sceneIdx && !audio.paused) {
+        audio.pause();
+      }
+    });
+
+    activeSceneIndexRef.current = sceneIdx;
+    const audio = audioMapRef.current.get(sceneIdx);
+    if (!audio) return;
+
+    audio.muted = isMutedRef.current;
+
+    if (Number.isFinite(offsetSec) && offsetSec >= 0) {
+      try {
+        if (Math.abs(audio.currentTime - offsetSec) > 0.08) {
+          audio.currentTime = offsetSec;
+        }
+      } catch {
+        // metadata might still be loading
+      }
+    }
+
+    if (isPlayingRef.current) {
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setAudioBlocked(false);
+          })
+          .catch((err) => {
+            if (err && (err.name === 'NotAllowedError' || err.name === 'AbortError')) {
+              console.warn('[Blu Audio] Playback prevented by browser policy or interrupt:', err.name);
+              setAudioBlocked(true);
+            }
+          });
+      }
+    }
+  }, []);
+
+  // Master Clock: requestAnimationFrame loop with audio-locked time
   useEffect(() => {
     if (!isPlaying) {
       lastRafTimeRef.current = null;
-      if (audioRef.current && !audioRef.current.paused) {
-        audioRef.current.pause();
-      }
+      pauseAllAudio();
       return;
     }
 
@@ -120,17 +186,16 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
 
       const state = getTimelineState(currentLesson, currentT);
       const scene = currentLesson.scenes[state.sceneIndex];
-      const audio = audioRef.current;
+      const audio = audioMapRef.current.get(state.sceneIndex);
 
       let nextT = currentT + delta;
 
-      // Sync with audio if audio is actively playing for current scene
+      // When audio is actively playing for current scene, lock nextT to audio.currentTime
       if (
-        scene?.audio_url &&
         audio &&
         !audio.paused &&
-        audio.readyState >= 2 &&
-        !state.isPause
+        !audio.seeking &&
+        audio.readyState >= 2
       ) {
         const audioSceneT = audio.currentTime * 1000;
         if (audioSceneT < scene.duration_ms) {
@@ -138,15 +203,33 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
         }
       }
 
+      // Check if end of lesson reached
       if (nextT >= maxDuration) {
         setT(maxDuration);
         tRef.current = maxDuration;
         setIsPlaying(false);
         isPlayingRef.current = false;
-        if (audio) {
-          audio.pause();
-        }
+        pauseAllAudio();
         return;
+      }
+
+      // Check if scene transition occurred
+      const nextState = getTimelineState(currentLesson, nextT);
+      if (nextState.sceneIndex !== state.sceneIndex) {
+        // Advance to next scene's audio track
+        playAudioForScene(nextState.sceneIndex, nextState.localT / 1000);
+      } else if (
+        audio &&
+        audio.paused &&
+        !audio.ended &&
+        isPlayingRef.current &&
+        !audioBlocked
+      ) {
+        // Resume audio if it was temporarily paused or ready
+        const maxAudioMs = audio.duration ? audio.duration * 1000 : scene.duration_ms;
+        if (nextState.localT < maxAudioMs) {
+          audio.play().catch(() => {});
+        }
       }
 
       setT(nextT);
@@ -159,15 +242,13 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isPlaying]);
+  }, [isPlaying, audioBlocked, pauseAllAudio, playAudioForScene]);
 
   const pause = useCallback(() => {
     setIsPlaying(false);
     isPlayingRef.current = false;
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-  }, []);
+    pauseAllAudio();
+  }, [pauseAllAudio]);
 
   const play = useCallback(() => {
     if (tRef.current >= totalDurationRef.current) {
@@ -177,15 +258,11 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     lastRafTimeRef.current = performance.now();
     setIsPlaying(true);
     isPlayingRef.current = true;
+    setAudioBlocked(false);
 
-    const audio = audioRef.current;
     const state = getTimelineState(lessonRef.current, tRef.current);
-    const scene = lessonRef.current.scenes[state.sceneIndex];
-    if (audio && scene?.audio_url && !state.isPause) {
-      audio.currentTime = state.localT / 1000;
-      audio.play().catch(() => {});
-    }
-  }, []);
+    playAudioForScene(state.sceneIndex, state.localT / 1000);
+  }, [playAudioForScene]);
 
   const togglePlay = useCallback(() => {
     if (isPlayingRef.current) {
@@ -200,13 +277,9 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     tRef.current = clamped;
     setT(clamped);
 
-    const audio = audioRef.current;
     const state = getTimelineState(lessonRef.current, clamped);
-    const scene = lessonRef.current.scenes[state.sceneIndex];
-    if (audio && scene?.audio_url) {
-      audio.currentTime = state.localT / 1000;
-    }
-  }, []);
+    playAudioForScene(state.sceneIndex, state.localT / 1000);
+  }, [playAudioForScene]);
 
   const next = useCallback(() => {
     const currentT = tRef.current;
@@ -240,21 +313,41 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     play();
   }, [seek, play]);
 
+  const toggleMute = useCallback(() => {
+    setIsMuted((prev) => {
+      const nextMuted = !prev;
+      audioMapRef.current.forEach((audio) => {
+        audio.muted = nextMuted;
+      });
+      return nextMuted;
+    });
+  }, []);
+
+  const unblockAudio = useCallback(() => {
+    setAudioBlocked(false);
+    play();
+  }, [play]);
+
   // Window.renderAt(tMs): synchronous deterministic rendering for Playwright
   useEffect(() => {
     window.renderAt = (tMs: number) => {
       flushSync(() => {
         setIsPlaying(false);
         isPlayingRef.current = false;
+        pauseAllAudio();
+
         const clamped = Math.max(0, Math.min(tMs, totalDurationRef.current));
         tRef.current = clamped;
         setT(clamped);
 
-        const audio = audioRef.current;
+        const state = getTimelineState(lessonRef.current, clamped);
+        const audio = audioMapRef.current.get(state.sceneIndex);
         if (audio) {
-          audio.pause();
-          const state = getTimelineState(lessonRef.current, clamped);
-          audio.currentTime = state.localT / 1000;
+          try {
+            audio.currentTime = state.localT / 1000;
+          } catch {
+            // Ignore in headless
+          }
         }
       });
     };
@@ -262,13 +355,17 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     return () => {
       delete window.renderAt;
     };
-  }, []);
+  }, [pauseAllAudio]);
 
   const progress = totalDuration > 0 ? Math.min(1, Math.max(0, T / totalDuration)) : 0;
 
   return {
     T,
     isPlaying,
+    isMuted,
+    toggleMute,
+    audioBlocked,
+    unblockAudio,
     play,
     pause,
     togglePlay,

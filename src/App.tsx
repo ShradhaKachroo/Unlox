@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import type { Lesson } from './types/lesson';
-import { validateLesson } from './types/validate';
+import { fetchLessonWithTiming } from './utils/loader';
 import { PlayerShell } from './player/PlayerShell';
 import { InputPage } from './pages/InputPage';
 
 export const App: React.FC = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [view, setView] = useState<'player' | 'input'>('player');
+  const [view, setView] = useState<'player' | 'input'>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('view') === 'input') return 'input';
+    }
+    return 'player';
+  });
   const [statusBadge, setStatusBadge] = useState<string>('Offline Sample');
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('view') === 'input') return false;
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
 
   // Initialize with sample lesson so player and window.renderAt are available immediately
@@ -18,27 +30,16 @@ export const App: React.FC = () => {
     const lang = params.get('lang') || 'en';
 
     if (requestedView === 'input') {
-      setView('input');
-      setLoading(false);
       return;
     }
 
     const loadInitialLesson = async () => {
       try {
         setLoading(true);
-        let res = await fetch(`/sample/lesson_${lang}.json`);
-        if (!res.ok) {
-          res = await fetch('/sample/lesson_en.json');
-        }
-        const data = await res.json();
-        const validation = validateLesson(data);
-        if (validation.ok && validation.lesson) {
-          setCurrentLesson(validation.lesson);
-          setStatusBadge(`Offline Sample (${validation.lesson.language.toUpperCase()})`);
-          setView('player');
-        } else {
-          setError(`Invalid sample lesson: ${(validation.errors || []).join(', ')}`);
-        }
+        const lesson = await fetchLessonWithTiming(lang);
+        setCurrentLesson(lesson);
+        setStatusBadge(`Offline Sample (${lesson.language.toUpperCase()})`);
+        setView('player');
       } catch (err) {
         setError(`Failed to load initial lesson: ${(err as Error).message}`);
       } finally {

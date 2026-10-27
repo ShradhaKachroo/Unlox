@@ -1,194 +1,255 @@
 import React from 'react';
 import type { TitleCardScene } from '../types/lesson';
+import { SceneStage } from '../components/SceneStage';
+import { easeOutBack, easeOutCubic } from '../anim/ease';
+import { prog, stagger, lerp } from '../anim/helpers';
 
 interface TitleCardProps {
   scene: TitleCardScene;
   t: number;
   duration: number;
+  quality?: 'high' | 'low';
 }
 
-// Pure cubic ease-out
-function easeOutCubic(x: number): number {
-  return 1 - Math.pow(1 - Math.min(1, Math.max(0, x)), 3);
-}
+const ORBIT_ITEMS = [
+  { label: '{ }', color: '#38bdf8' },
+  { label: '01', color: '#a855f7' },
+  { label: '< >', color: '#34d399' },
+  { label: 'fn', color: '#f59e0b' },
+  { label: 'λ', color: '#f43f5e' },
+  { label: '//', color: '#60a5fa' },
+];
 
-export const TitleCard: React.FC<TitleCardProps> = ({ scene, t, duration }) => {
-  // Pure function of time: Heading fades and slides in over the first 600ms
-  const headingProgress = Math.min(1, Math.max(0, t / 600));
-  const headingEased = easeOutCubic(headingProgress);
-  const headingOpacity = headingEased;
-  const headingTranslateY = (1 - headingEased) * 45; // slides up from +45px to 0
+export const TitleCard: React.FC<TitleCardProps> = ({
+  scene,
+  t,
+  duration,
+  quality = 'high',
+}) => {
+  const letters = Array.from(scene.heading);
+  const totalLetters = letters.length;
 
-  // Subtitle fades and slides in over 350ms -> 950ms
-  const subtitleProgress = Math.min(1, Math.max(0, (t - 300) / 650));
-  const subtitleEased = easeOutCubic(subtitleProgress);
-  const subtitleOpacity = subtitleEased;
-  const subtitleTranslateY = (1 - subtitleEased) * 30;
+  // Staggered letter reveal across first 1400ms
+  const letterDelay = Math.min(30, 900 / Math.max(1, totalLetters));
 
-  // Background ambient element: subtle deterministic expansion purely as function of t
-  const ambientScale = 1 + (Math.min(t, duration) / duration) * 0.08;
+  // Animated underline under heading
+  const underlineP = prog(t, 500, 1400);
+  const underlineWidth = lerp(0, 520, easeOutCubic(underlineP));
+
+  // Subtitle reveal
+  const subP = prog(t, 900, 1700);
+  const subEased = easeOutCubic(subP);
+
+  // Subtle 3D tilt of the central card
+  const tiltX = Math.sin(t * 0.0012) * 3.5;
+  const tiltY = Math.cos(t * 0.0015) * 4.5;
 
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        background: 'radial-gradient(ellipse at 50% 30%, #172554 0%, #0b0f19 75%, #05070d 100%)',
-        color: '#f8fafc',
-        padding: '0 80px',
-        boxSizing: 'border-box',
-        userSelect: 'none',
-      }}
-    >
-      {/* Background SVG grid and accents - pure function of t */}
-      <svg
+    <SceneStage t={t} duration={duration} quality={quality}>
+      <div
         style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
           width: '100%',
           height: '100%',
-          pointerEvents: 'none',
-          opacity: 0.35,
-          transform: `scale(${ambientScale})`,
-        }}
-        viewBox="0 0 1280 720"
-      >
-        <defs>
-          <radialGradient id="titleGlow" cx="50%" cy="40%" r="50%">
-            <stop offset="0%" stopColor="#3b82f6" stopOpacity="0.4" />
-            <stop offset="100%" stopColor="#1d4ed8" stopOpacity="0" />
-          </radialGradient>
-          <pattern id="titleGrid" width="60" height="60" patternUnits="userSpaceOnUse">
-            <path
-              d="M 60 0 L 0 0 0 60"
-              fill="none"
-              stroke="#38bdf8"
-              strokeWidth="0.75"
-              strokeOpacity="0.18"
-            />
-          </pattern>
-        </defs>
-
-        <rect width="100%" height="100%" fill="url(#titleGrid)" />
-        <circle cx="640" cy="340" r="320" fill="url(#titleGlow)" />
-
-        {/* Orbit ring purely drawn with t */}
-        <circle
-          cx="640"
-          cy="340"
-          r="260"
-          fill="none"
-          stroke="#60a5fa"
-          strokeWidth="1.5"
-          strokeDasharray="1633"
-          strokeDashoffset={1633 * (1 - Math.min(1, t / 1200))}
-          opacity="0.3"
-        />
-      </svg>
-
-      {/* Pill Badge */}
-      <div
-        style={{
-          opacity: headingOpacity,
-          transform: `translateY(${headingTranslateY * 0.8}px)`,
-          display: 'inline-flex',
+          display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          gap: '10px',
-          padding: '8px 20px',
-          borderRadius: '9999px',
-          background: 'rgba(59, 130, 246, 0.16)',
-          border: '1px solid rgba(96, 165, 250, 0.35)',
-          color: '#93c5fd',
-          fontSize: '15px',
-          fontWeight: 700,
-          letterSpacing: '0.12em',
-          textTransform: 'uppercase',
-          marginBottom: '28px',
-          boxShadow: '0 0 20px rgba(59, 130, 246, 0.2)',
-          zIndex: 2,
+          justifyContent: 'center',
+          position: 'relative',
+          transformStyle: 'preserve-3d',
         }}
       >
-        <span
+        {/* 3D Orbiting Shapes Ring (behind/in front of text) */}
+        <div
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: '#60a5fa',
-            boxShadow: '0 0 10px #60a5fa',
-          }}
-        />
-        Visual Lesson Card
-      </div>
-
-      {/* Title / Heading */}
-      <h1
-        style={{
-          margin: '0 0 20px 0',
-          maxWidth: '1100px',
-          textAlign: 'center',
-          fontSize: '56px',
-          fontWeight: 800,
-          lineHeight: 1.18,
-          letterSpacing: '-0.025em',
-          opacity: headingOpacity,
-          transform: `translateY(${headingTranslateY}px)`,
-          background: 'linear-gradient(135deg, #ffffff 30%, #bfdbfe 70%, #93c5fd 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          textShadow: '0 10px 30px rgba(0,0,0,0.5)',
-          zIndex: 2,
-        }}
-      >
-        {scene.heading}
-      </h1>
-
-      {/* Subtitle */}
-      {scene.subtitle && (
-        <p
-          style={{
-            margin: '0',
-            maxWidth: '920px',
-            textAlign: 'center',
-            fontSize: '24px',
-            fontWeight: 400,
-            lineHeight: 1.5,
-            color: '#cbd5e1',
-            opacity: subtitleOpacity,
-            transform: `translateY(${subtitleTranslateY}px)`,
-            zIndex: 2,
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            transformStyle: 'preserve-3d',
           }}
         >
-          {scene.subtitle}
-        </p>
-      )}
+          {ORBIT_ITEMS.map((item, idx) => {
+            const angle = t * 0.0006 + (idx * 2 * Math.PI) / ORBIT_ITEMS.length;
+            const x = 640 + Math.cos(angle) * 440;
+            const y = 330 + Math.sin(angle) * 110;
+            const z = Math.sin(angle) * 180;
+            const normZ = (z + 180) / 360; // 0 (back) to 1 (front)
+            const scale = 0.75 + 0.35 * normZ;
+            const opacity = 0.35 + 0.55 * normZ;
 
-      {/* Dynamic bottom indicator */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '40px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          opacity: Math.min(1, Math.max(0, (t - 600) / 400)),
-          color: '#64748b',
-          fontSize: '14px',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          zIndex: 2,
-        }}
-      >
-        <span>BLU VISUAL TEACHER</span>
-        <span>•</span>
-        <span>OFFLINE INTERACTIVE</span>
+            return (
+              <div
+                key={`orbit-${idx}`}
+                style={{
+                  position: 'absolute',
+                  left: `${x}px`,
+                  top: `${y}px`,
+                  transform: `translate(-50%, -50%) translateZ(${z}px) scale(${scale})`,
+                  width: '46px',
+                  height: '46px',
+                  borderRadius: '12px',
+                  background: 'rgba(15, 23, 42, 0.85)',
+                  border: `1.5px solid ${item.color}`,
+                  boxShadow: `0 0 16px ${item.color}55`,
+                  color: item.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  opacity,
+                  zIndex: z > 0 ? 10 : 1,
+                }}
+              >
+                {item.label}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Central 3D Glass Hero Card */}
+        <div
+          style={{
+            width: '940px',
+            padding: '48px 50px',
+            borderRadius: '28px',
+            background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.82) 0%, rgba(9, 14, 26, 0.94) 100%)',
+            border: '1.5px solid rgba(56, 189, 248, 0.28)',
+            boxShadow: '0 25px 60px -10px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.12)',
+            backdropFilter: quality === 'low' ? undefined : 'blur(16px)',
+            transform: `rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) translateZ(40px)`,
+            transformStyle: 'preserve-3d',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            textAlign: 'center',
+            zIndex: 5,
+          }}
+        >
+          {/* Top Badge */}
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 18px',
+              borderRadius: '9999px',
+              background: 'rgba(56, 189, 248, 0.14)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              color: '#38bdf8',
+              fontSize: '13px',
+              fontWeight: 700,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              marginBottom: '24px',
+              boxShadow: '0 0 15px rgba(56, 189, 248, 0.2)',
+              opacity: prog(t, 0, 400),
+            }}
+          >
+            <span
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#38bdf8',
+                boxShadow: '0 0 8px #38bdf8',
+              }}
+            />
+            Interactive Visual Lesson
+          </div>
+
+          {/* Word-by-word with letter-by-letter reveal */}
+          <h1
+            style={{
+              margin: '0 0 16px 0',
+              fontSize: '54px',
+              fontWeight: 800,
+              lineHeight: 1.25,
+              letterSpacing: '-0.02em',
+              textAlign: 'center',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'center',
+              gap: '12px',
+            }}
+          >
+            {scene.heading.split(' ').map((word, wIdx) => {
+              // Calculate cumulative character offset for stagger
+              const prevChars = scene.heading
+                .split(' ')
+                .slice(0, wIdx)
+                .join(' ').length;
+              const wordStartOffset = wIdx > 0 ? prevChars + 1 : 0;
+
+              return (
+                <span
+                  key={`word-${wIdx}`}
+                  style={{
+                    display: 'inline-flex',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {Array.from(word).map((char, cIdx) => {
+                    const globalIdx = wordStartOffset + cIdx;
+                    const charP = stagger(t, globalIdx, letterDelay, 350);
+                    const charEased = easeOutBack(charP);
+                    const opacity = charP;
+                    const translateY = (1 - charEased) * 36;
+                    const rotateX = (1 - charEased) * 45;
+
+                    return (
+                      <span
+                        key={`char-${globalIdx}`}
+                        style={{
+                          display: 'inline-block',
+                          opacity,
+                          transform: `translateY(${translateY}px) rotateX(${rotateX}deg)`,
+                          background: 'linear-gradient(135deg, #ffffff 20%, #93c5fd 80%, #60a5fa 100%)',
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                        }}
+                      >
+                        {char}
+                      </span>
+                    );
+                  })}
+                </span>
+              );
+            })}
+          </h1>
+
+          {/* Animated Growing Underline */}
+          <div
+            style={{
+              height: '4px',
+              width: `${underlineWidth}px`,
+              borderRadius: '2px',
+              background: 'linear-gradient(90deg, #0284c7 0%, #38bdf8 50%, #818cf8 100%)',
+              boxShadow: '0 0 16px rgba(56, 189, 248, 0.6)',
+              marginBottom: '22px',
+            }}
+          />
+
+          {/* Subtitle */}
+          {scene.subtitle && (
+            <p
+              style={{
+                margin: 0,
+                maxWidth: '780px',
+                fontSize: '24px',
+                fontWeight: 400,
+                lineHeight: 1.45,
+                color: '#cbd5e1',
+                opacity: subEased,
+                transform: `translateY(${(1 - subEased) * 20}px)`,
+              }}
+            >
+              {scene.subtitle}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+    </SceneStage>
   );
 };

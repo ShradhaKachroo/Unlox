@@ -2,20 +2,24 @@ import React from 'react';
 
 interface ControlsProps {
   isPlaying: boolean;
+  isMuted?: boolean;
   onPlay: () => void;
   onPause: () => void;
   onTogglePlay: () => void;
   onNext: () => void;
   onPrev: () => void;
   onReplay: () => void;
+  onToggleMute?: () => void;
 }
 
 export const Controls: React.FC<ControlsProps> = ({
   isPlaying,
+  isMuted = false,
   onTogglePlay,
   onNext,
   onPrev,
   onReplay,
+  onToggleMute,
 }) => {
   const buttonStyle: React.CSSProperties = {
     background: 'rgba(30, 41, 59, 0.7)',
@@ -102,6 +106,24 @@ export const Controls: React.FC<ControlsProps> = ({
           <span>↺</span>
           <span>Replay</span>
         </button>
+
+        {onToggleMute && (
+          <button
+            id="btn-mute-toggle"
+            className="control-btn"
+            onClick={onToggleMute}
+            style={{
+              ...buttonStyle,
+              background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(30, 41, 59, 0.7)',
+              borderColor: isMuted ? '#ef4444' : 'rgba(71, 85, 105, 0.5)',
+              color: isMuted ? '#fca5a5' : '#38bdf8',
+            }}
+            title={isMuted ? 'Unmute Voice' : 'Mute Voice'}
+          >
+            <span>{isMuted ? '🔇' : '🔊'}</span>
+            <span>{isMuted ? 'Muted' : 'Voice On'}</span>
+          </button>
+        )}
       </div>
 
       {/* Keyboard Shortcuts Hint */}

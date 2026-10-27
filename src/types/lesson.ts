@@ -31,6 +31,7 @@ export interface CodeWalkthroughScene extends BaseScene {
   code: string;
   highlight_lines: number[]; // 1-based line number for each progression step
   language_label?: string;
+  trace?: Array<{ line: number; vars: Record<string, string | number> }>;
 }
 
 export type Scene = TitleCardScene | DiagramScene | CodeWalkthroughScene;

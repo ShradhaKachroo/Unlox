@@ -8,16 +8,17 @@ interface SceneRendererProps {
   scene: Scene;
   t: number;
   duration: number;
+  quality?: 'high' | 'low';
 }
 
-export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, t, duration }) => {
+export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, t, duration, quality = 'high' }) => {
   switch (scene.type) {
     case 'title_card':
-      return <TitleCard scene={scene} t={t} duration={duration} />;
+      return <TitleCard scene={scene} t={t} duration={duration} quality={quality} />;
     case 'code_walkthrough':
-      return <CodeWalkthrough scene={scene} t={t} duration={duration} />;
+      return <CodeWalkthrough scene={scene} t={t} duration={duration} quality={quality} />;
     case 'diagram':
-      return <Diagram scene={scene} t={t} duration={duration} />;
+      return <Diagram scene={scene} t={t} duration={duration} quality={quality} />;
     default:
       return (
         <div

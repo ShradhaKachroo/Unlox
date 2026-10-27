@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { Lesson, Level } from '../types/lesson';
 import { validateLesson } from '../types/validate';
 import { LANGUAGE_LABELS } from '../utils/fonts';
+import { fetchLessonWithTiming } from '../utils/loader';
 
 interface InputPageProps {
   onLessonReady: (lesson: Lesson, sourceBadge: string) => void;
@@ -23,28 +24,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
   const fetchSampleLesson = async (langCode: string): Promise<Lesson> => {
-    // Attempt requested language sample
-    try {
-      const res = await fetch(`/sample/lesson_${langCode}.json`);
-      if (res.ok) {
-        const data = await res.json();
-        const validation = validateLesson(data);
-        if (validation.ok && validation.lesson) {
-          return validation.lesson;
-        }
-      }
-    } catch {
-      // ignore and try English fallback
-    }
-
-    // Fallback to English sample
-    const enRes = await fetch('/sample/lesson_en.json');
-    const enData = await enRes.json();
-    const enValidation = validateLesson(enData);
-    if (!enValidation.ok || !enValidation.lesson) {
-      throw new Error(`Failed to load English fallback: ${(enValidation.errors || []).join(', ')}`);
-    }
-    return enValidation.lesson;
+    return await fetchLessonWithTiming(langCode);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,7 +63,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
         }
       }
       throw new Error('Backend response invalid or unavailable');
-    } catch (err) {
+    } catch {
       // Backend not running or call failed -> graceful offline fallback to sample
       setStatusMessage(`Loading offline verified sample for [${language.toUpperCase()}]...`);
       try {

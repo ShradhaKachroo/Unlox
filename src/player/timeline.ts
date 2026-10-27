@@ -1,6 +1,6 @@
 import type { Lesson } from '../types/lesson';
 
-export const PAUSE_BETWEEN_SCENES_MS = 400;
+export const PAUSE_BETWEEN_SCENES_MS = 0;
 
 export interface TimelineState {
   sceneIndex: number;

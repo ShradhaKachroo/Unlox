@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Lesson } from '../types/lesson';
 import { usePlayer } from './usePlayer';
 import { Stage } from './Stage';
@@ -6,7 +6,9 @@ import { SceneRenderer } from './SceneRenderer';
 import { CaptionBar } from './CaptionBar';
 import { ProgressBar } from './ProgressBar';
 import { Controls } from './Controls';
+import { DebugOverlay } from './DebugOverlay';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
+import { getInitialQuality, type QualityMode } from '../utils/quality';
 
 interface PlayerShellProps {
   lesson: Lesson;
@@ -19,9 +21,16 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   onBackToInput,
   statusBadge,
 }) => {
+  const [showDebug, setShowDebug] = useState(false);
+  const [quality] = useState<QualityMode>(getInitialQuality);
+
   const {
     T,
     isPlaying,
+    isMuted,
+    toggleMute,
+    audioBlocked,
+    unblockAudio,
     play,
     pause,
     togglePlay,
@@ -35,7 +44,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     totalDuration,
     currentScene,
     isPause,
-  } = usePlayer(lesson, true); // Auto-start playback
+  } = usePlayer(lesson, false); // Default to paused so user click guarantees audio playback permission
 
   // Keyboard shortcut listener
   useEffect(() => {
@@ -61,6 +70,12 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
       } else if (e.code === 'KeyR') {
         e.preventDefault();
         replay();
+      } else if (e.code === 'KeyM') {
+        e.preventDefault();
+        toggleMute();
+      } else if (e.code === 'KeyD') {
+        e.preventDefault();
+        setShowDebug((prev) => !prev);
       }
     };
 
@@ -68,7 +83,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [togglePlay, next, prev, replay]);
+  }, [togglePlay, next, prev, replay, toggleMute]);
 
   const sceneCount = lesson.scenes.length;
   const currentSceneNumber = sceneIndex + 1;
@@ -86,6 +101,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         color: '#f8fafc',
         fontFamily: getFontFamilyForLanguage(lesson.language),
         overflow: 'hidden',
+        position: 'relative',
       }}
     >
       {/* Top Header Bar */}
@@ -179,6 +195,35 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                   {statusBadge}
                 </span>
               )}
+              {/* Voice Track Indicator Badge */}
+              <span
+                id="voice-badge"
+                style={{
+                  padding: '2px 8px',
+                  borderRadius: '4px',
+                  background: currentScene?.audio_url
+                    ? isPlaying && !isMuted
+                      ? 'rgba(56, 189, 248, 0.25)'
+                      : 'rgba(148, 163, 184, 0.15)'
+                    : 'rgba(239, 68, 68, 0.15)',
+                  color: currentScene?.audio_url
+                    ? isPlaying && !isMuted
+                      ? '#38bdf8'
+                      : '#94a3b8'
+                    : '#f87171',
+                  border: `1px solid ${currentScene?.audio_url ? 'rgba(56, 189, 248, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                }}
+                title={currentScene?.audio_url ? `Audio source: ${currentScene.audio_url}` : 'No audio file'}
+              >
+                <span>{currentScene?.audio_url ? (isMuted ? '🔇' : isPlaying ? '🎙️' : '🔈') : '⚠️'}</span>
+                <span>{currentScene?.audio_url ? (isPlaying && !isMuted ? 'Voice Playing' : 'Voice Ready') : 'No Audio'}</span>
+              </span>
             </div>
           </div>
         </div>
@@ -246,13 +291,116 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               scene={currentScene}
               t={localT}
               duration={sceneDuration}
+              quality={quality}
             />
           ) : (
             <div style={{ color: '#ef4444', textAlign: 'center', padding: '100px' }}>
               No scene available.
             </div>
           )}
+
+          {/* Initial Play Overlay: Provides direct user gesture for 100% audio permission */}
+          {!isPlaying && T === 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'rgba(4, 7, 17, 0.55)',
+                backdropFilter: 'blur(4px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                zIndex: 30,
+              }}
+            >
+              <button
+                id="btn-start-lesson"
+                onClick={play}
+                style={{
+                  background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 14, 26, 0.98) 100%)',
+                  border: '2px solid #38bdf8',
+                  borderRadius: '24px',
+                  padding: '24px 44px',
+                  color: '#ffffff',
+                  cursor: 'pointer',
+                  boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8), 0 0 50px rgba(56, 189, 248, 0.45)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '20px',
+                  transition: 'transform 0.2s ease',
+                }}
+              >
+                <div
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '26px',
+                    color: '#ffffff',
+                    boxShadow: '0 0 25px rgba(56, 189, 248, 0.6)',
+                  }}
+                >
+                  ▶
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.02em' }}>
+                    Start Lesson
+                  </div>
+                  <div style={{ fontSize: '14px', color: '#38bdf8', fontWeight: 600, marginTop: '4px' }}>
+                    🎙️ Full narration & audio ready • Click to Play
+                  </div>
+                </div>
+              </button>
+            </div>
+          )}
         </Stage>
+
+        {/* Autoplay Browser Policy Fallback Banner */}
+        {audioBlocked && (
+          <div
+            id="banner-unblock-audio"
+            onClick={unblockAudio}
+            style={{
+              position: 'absolute',
+              top: '20px',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              color: '#ffffff',
+              padding: '12px 24px',
+              borderRadius: '9999px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.5), 0 0 25px rgba(2, 132, 199, 0.7)',
+              border: '2px solid #38bdf8',
+              fontWeight: 700,
+              fontSize: '14px',
+              cursor: 'pointer',
+              zIndex: 50,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>🔊</span>
+            <span>Audio paused by browser policy. Click here to enable voiceover!</span>
+          </div>
+        )}
+
+        <DebugOverlay
+          visible={showDebug}
+          T={T}
+          sceneIndex={sceneIndex}
+          localT={localT}
+          sceneDuration={sceneDuration}
+          totalDuration={totalDuration}
+          isPlaying={isPlaying}
+          isPause={isPause}
+          quality={quality}
+        />
       </main>
 
       {/* Bottom Footer Shell (Caption Bar + Progress + Controls) */}
@@ -293,12 +441,14 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           {/* Player Action Controls */}
           <Controls
             isPlaying={isPlaying}
+            isMuted={isMuted}
             onPlay={play}
             onPause={pause}
             onTogglePlay={togglePlay}
             onNext={next}
             onPrev={prev}
             onReplay={replay}
+            onToggleMute={toggleMute}
           />
         </div>
       </footer>
