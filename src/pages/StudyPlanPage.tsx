@@ -9,13 +9,13 @@ interface StudyPlanPageProps {
 interface SyllabusTrack {
   id: string;
   name: string;
-  icon: string;
+  category: string;
   description: string;
   modules: Array<{
     id: string;
     title: string;
     description: string;
-    duration: number; // 45 or 120
+    duration: number;
     level: Level;
   }>;
 }
@@ -24,39 +24,39 @@ const TRACKS: SyllabusTrack[] = [
   {
     id: 'python-core',
     name: 'Python Programming Essentials',
-    icon: '🐍',
-    description: 'Master the fundamental building blocks of Python step-by-step with visual blackboard cuts.',
+    category: 'Foundations',
+    description: 'Master the core building blocks of Python step-by-step with clean visual execution traces.',
     modules: [
-      { id: 'm1', title: 'Variables and Memory in Python', description: 'Understand how values are stored in memory addresses.', duration: 45, level: 'beginner' },
-      { id: 'm2', title: 'If-Else Conditional Logic', description: 'Branching decisions, booleans, and comparison operators.', duration: 45, level: 'beginner' },
-      { id: 'm3', title: 'Python For Loops and Iteration', description: 'Looping over lists, strings, and range sequences cleanly.', duration: 120, level: 'beginner' },
-      { id: 'm4', title: 'While Loops and Termination Conditions', description: 'Managing stateful loops, break statements, and counters.', duration: 45, level: 'beginner' },
-      { id: 'm5', title: 'Functions and Return Values', description: 'Writing reusable code blocks, parameters, and scope.', duration: 120, level: 'intermediate' },
+      { id: 'm1', title: 'Variables and Memory in Python', description: 'Understand how values and references are stored in memory addresses.', duration: 45, level: 'beginner' },
+      { id: 'm2', title: 'If-Else Conditional Logic', description: 'Branching decisions, boolean expressions, and comparison operators.', duration: 45, level: 'beginner' },
+      { id: 'm3', title: 'Python For Loops and Iteration', description: 'Iterating over lists, strings, and range sequences cleanly.', duration: 120, level: 'beginner' },
+      { id: 'm4', title: 'While Loops and State Termination', description: 'Managing stateful loops, break statements, and loop guards.', duration: 45, level: 'beginner' },
+      { id: 'm5', title: 'Functions and Return Values', description: 'Writing modular code blocks, parameter passing, and scope frames.', duration: 120, level: 'intermediate' },
     ],
   },
   {
     id: 'dsa',
     name: 'Data Structures & Algorithms',
-    icon: '⚡',
-    description: 'Visual conceptual walkthroughs of key algorithms tested in tech interviews.',
+    category: 'Algorithms',
+    description: 'Visual conceptual walkthroughs of key algorithms with asymptotic complexity analysis.',
     modules: [
-      { id: 'd1', title: 'Array Indexing and Slicing', description: 'Contiguous memory layout and accessing elements by index.', duration: 45, level: 'beginner' },
-      { id: 'd2', title: 'Linear Search vs Binary Search', description: 'Why sorted data enables logarithmic search time.', duration: 120, level: 'beginner' },
+      { id: 'd1', title: 'Array Indexing and Slicing', description: 'Contiguous memory layout and constant-time element lookup.', duration: 45, level: 'beginner' },
+      { id: 'd2', title: 'Linear Search vs Binary Search', description: 'Why sorted data enables logarithmic O(log n) search time.', duration: 120, level: 'beginner' },
       { id: 'd3', title: 'Bubble Sort and Swapping Logic', description: 'Visualizing element comparisons and bubble progression.', duration: 120, level: 'beginner' },
       { id: 'd4', title: 'Recursion and Call Stacks', description: 'Base cases, recursive unwinding, and stack memory frames.', duration: 120, level: 'intermediate' },
-      { id: 'd5', title: 'Hash Tables and Collision Handling', description: 'Key-value mapping, hash functions, and O(1) lookups.', duration: 120, level: 'intermediate' },
+      { id: 'd5', title: 'Hash Tables and Collision Handling', description: 'Key-value mapping, hash functions, and amortized O(1) lookups.', duration: 120, level: 'intermediate' },
     ],
   },
   {
     id: 'advanced-systems',
-    name: 'Advanced Systems & Engineering',
-    icon: '🚀',
+    name: 'Advanced Systems & Internals',
+    category: 'Systems',
     description: 'High-rigor deep dive into runtime internals, performance optimization, and concurrency.',
     modules: [
       { id: 'a1', title: 'Python Generators & Memory Streams', description: 'Yield expressions, lazy evaluation, and pipeline streaming.', duration: 120, level: 'advanced' },
       { id: 'a2', title: 'Decorators & Function Wrappers', description: 'Higher-order functions, closures, and wrapping execution.', duration: 120, level: 'advanced' },
       { id: 'a3', title: 'CPython GIL & Multithreading Limits', description: 'Global interpreter lock, CPU vs I/O bound concurrency.', duration: 120, level: 'advanced' },
-      { id: 'a4', title: 'AsyncIO & Event Loop Architecture', description: 'Coroutines, tasks, and non-blocking asynchronous execution.', duration: 120, level: 'advanced' },
+      { id: 'a4', title: 'AsyncIO & Event Loop Architecture', description: 'Coroutines, event queues, and non-blocking asynchronous execution.', duration: 120, level: 'advanced' },
       { id: 'a5', title: 'Memory Management & Garbage Collection', description: 'Reference counting, cyclic GC, and object deallocation.', duration: 120, level: 'advanced' },
     ],
   },
@@ -90,14 +90,14 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: 'radial-gradient(ellipse at 50% 15%, #142018 0%, #0d1711 50%, #060b08 100%)',
+        background: '#090d0b',
         color: '#f8fafc',
-        fontFamily: '"Outfit", sans-serif',
-        padding: '32px 24px',
+        fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        padding: '36px 24px 60px',
         boxSizing: 'border-box',
       }}
     >
-      <div style={{ maxWidth: '960px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '880px', margin: '0 auto' }}>
         {/* Navigation Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <button
@@ -105,23 +105,28 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
             onClick={onBack}
             style={{
               padding: '8px 16px',
-              borderRadius: '8px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              border: '1px dashed rgba(254, 240, 138, 0.4)',
-              color: '#fef08a',
+              borderRadius: '6px',
+              background: 'rgba(255, 255, 255, 0.04)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              color: '#e2e8f0',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              transition: 'all 0.15s ease',
             }}
           >
-            ← Back to Blackboard Studio
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>Back to Studio</span>
           </button>
 
-          <span style={{ fontSize: '13px', color: '#86efac', fontFamily: '"Kalam", cursive' }}>
-            Curriculum Progress: <strong style={{ color: '#fef08a' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
+          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+            Progress: <strong style={{ color: '#34d399' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
           </span>
         </div>
 
@@ -129,23 +134,22 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
         <div style={{ marginBottom: '24px' }}>
           <h1
             style={{
-              fontSize: '32px',
-              fontWeight: 800,
+              fontSize: '28px',
+              fontWeight: 700,
               margin: '0 0 6px 0',
               color: '#ffffff',
-              fontFamily: '"Kalam", cursive',
-              textShadow: '0 0 15px rgba(255, 255, 255, 0.2)',
+              letterSpacing: '-0.01em',
             }}
           >
-            📋 Student Blackboard Curriculum
+            Curriculum Pathways
           </h1>
           <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
-            Structured learning pathways from beginner to advanced. Click any module to generate its visual lesson!
+            Structured learning tracks. Select any module to generate its visual lesson.
           </p>
         </div>
 
-        {/* Syllabus Track Selector */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        {/* Track Selector */}
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '24px', flexWrap: 'wrap' }}>
           {TRACKS.map((t) => {
             const isSelected = t.id === selectedTrackId;
             return (
@@ -156,43 +160,55 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                 style={{
                   flex: 1,
                   minWidth: '220px',
-                  padding: '14px 18px',
-                  borderRadius: '12px',
-                  background: isSelected ? 'rgba(52, 211, 153, 0.15)' : 'rgba(14, 24, 18, 0.7)',
-                  border: isSelected ? '2px solid #34d399' : '1px solid rgba(255, 255, 255, 0.12)',
+                  padding: '14px 16px',
+                  borderRadius: '8px',
+                  background: isSelected ? 'rgba(52, 211, 153, 0.1)' : '#0d1511',
+                  border: isSelected ? '1.5px solid #34d399' : '1px solid rgba(255, 255, 255, 0.08)',
                   color: '#ffffff',
                   textAlign: 'left',
                   cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  boxShadow: isSelected ? '0 0 20px rgba(52, 211, 153, 0.25)' : 'none',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '20px' }}>{t.icon}</span>
-                  <span style={{ fontWeight: 700, fontSize: '15px' }}>{t.name}</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                  <span style={{ fontWeight: 700, fontSize: '14px', color: isSelected ? '#34d399' : '#f1f5f9' }}>
+                    {t.name}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: '10px',
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: 'rgba(255, 255, 255, 0.06)',
+                      color: '#94a3b8',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {t.category}
+                  </span>
                 </div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>{t.description}</div>
+                <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.35 }}>{t.description}</div>
               </button>
             );
           })}
         </div>
 
-        {/* Modules List inside Chalkboard Frame */}
+        {/* Modules List */}
         <div
           style={{
-            border: '8px solid #2e1c0c',
-            borderRadius: '16px',
-            background: '#0d1711',
-            boxShadow: 'inset 0 0 40px rgba(0, 0, 0, 0.9), 0 20px 40px rgba(0, 0, 0, 0.8)',
-            padding: '24px',
+            borderRadius: '10px',
+            background: '#0d1511',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            padding: '18px',
+            boxSizing: 'border-box',
           }}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {currentTrack.modules.map((m, idx) => {
               const isDone = !!completed[m.id];
-              let levelColor = '#86efac';
-              if (m.level === 'intermediate') levelColor = '#fef08a';
-              if (m.level === 'advanced') levelColor = '#c084fc';
+              let levelColor = '#34d399';
+              if (m.level === 'intermediate') levelColor = '#38bdf8';
+              if (m.level === 'advanced') levelColor = '#a78bfa';
 
               return (
                 <div
@@ -201,30 +217,30 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '16px 20px',
-                    borderRadius: '10px',
-                    background: isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.04)',
-                    border: isDone ? '1px solid #10b981' : '1px dashed rgba(255, 255, 255, 0.15)',
+                    padding: '14px 16px',
+                    borderRadius: '8px',
+                    background: isDone ? 'rgba(52, 211, 153, 0.04)' : '#070b09',
+                    border: isDone ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid rgba(255, 255, 255, 0.06)',
                     gap: '16px',
-                    transition: 'all 0.15s ease',
+                    transition: 'all 0.12s ease',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                     <button
                       type="button"
                       onClick={() => toggleComplete(m.id)}
                       style={{
-                        width: '26px',
-                        height: '26px',
-                        borderRadius: '50%',
-                        border: isDone ? 'none' : '2px solid rgba(255, 255, 255, 0.3)',
+                        width: '22px',
+                        height: '22px',
+                        borderRadius: '4px',
+                        border: isDone ? 'none' : '1.5px solid rgba(255, 255, 255, 0.3)',
                         background: isDone ? '#10b981' : 'transparent',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        fontSize: '14px',
+                        fontSize: '12px',
                         flexShrink: 0,
                       }}
                       title={isDone ? 'Mark as incomplete' : 'Mark as complete'}
@@ -233,15 +249,15 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                     </button>
 
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
-                        <span style={{ fontSize: '12px', color: '#6ee7b7', fontWeight: 700 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
+                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
                           #{idx + 1}
                         </span>
                         <span
                           style={{
-                            fontWeight: 700,
-                            fontSize: '15px',
-                            color: isDone ? '#94a3b8' : '#ffffff',
+                            fontWeight: 600,
+                            fontSize: '14px',
+                            color: isDone ? '#64748b' : '#f8fafc',
                             textDecoration: isDone ? 'line-through' : 'none',
                           }}
                         >
@@ -250,19 +266,19 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                         <span
                           style={{
                             fontSize: '10px',
-                            fontWeight: 700,
-                            padding: '2px 8px',
+                            fontWeight: 600,
+                            padding: '1px 6px',
                             borderRadius: '4px',
-                            background: `${levelColor}22`,
+                            background: `${levelColor}18`,
                             color: levelColor,
-                            border: `1px solid ${levelColor}44`,
+                            border: `1px solid ${levelColor}33`,
                             textTransform: 'uppercase',
                           }}
                         >
                           {m.level}
                         </span>
                       </div>
-                      <div style={{ fontSize: '13px', color: '#94a3b8' }}>{m.description}</div>
+                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>{m.description}</div>
                     </div>
                   </div>
 
@@ -270,22 +286,21 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                     type="button"
                     onClick={() => onSelectTopic(m.title, m.duration)}
                     style={{
-                      padding: '9px 18px',
-                      borderRadius: '8px',
-                      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
-                      border: '1px solid #34d399',
-                      color: '#ffffff',
-                      fontSize: '13px',
-                      fontWeight: 700,
+                      padding: '8px 14px',
+                      borderRadius: '6px',
+                      background: 'rgba(52, 211, 153, 0.12)',
+                      border: '1px solid rgba(52, 211, 153, 0.3)',
+                      color: '#34d399',
+                      fontSize: '12px',
+                      fontWeight: 600,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      boxShadow: '0 0 15px rgba(52, 211, 153, 0.25)',
+                      transition: 'all 0.12s ease',
                     }}
                   >
-                    <span>▶</span>
                     <span>Generate ({m.duration}s)</span>
                   </button>
                 </div>
