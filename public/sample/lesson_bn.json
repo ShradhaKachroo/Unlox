@@ -36,6 +36,22 @@
         "Iteration 2: i = 1",
         "Iteration 3: i = 2"
       ]
+    },
+    {
+      "type": "quiz",
+      "id": "scene-quiz",
+      "heading": "Python Loops জ্ঞান যাচাই",
+      "question": "Python-এ range(3) কোন সংখ্যার ক্রম তৈরি করে?",
+      "options": [
+        "0, 1, এবং 2",
+        "1, 2, এবং 3",
+        "0, 1, 2, এবং 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "পাইথনে range(3) ডিফল্টভাবে 0 থেকে শুরু হয় এবং 3-এর আগে (0, 1, 2) থেমে যায়।",
+      "narration": "Python-এ range(3) কোন সংখ্যার ক্রম তৈরি করে?",
+      "duration_ms": 7500
     }
   ]
 }

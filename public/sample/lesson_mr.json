@@ -36,6 +36,22 @@
         "Iteration 2: i = 1",
         "Iteration 3: i = 2"
       ]
+    },
+    {
+      "type": "quiz",
+      "id": "scene-quiz",
+      "heading": "Python Loops ज्ञान चाचणी",
+      "question": "Python मध्ये range(3) कोणत्या संख्यांचा क्रम तयार करते?",
+      "options": [
+        "0, 1, आणि 2",
+        "1, 2, आणि 3",
+        "0, 1, 2, आणि 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "पायथनमध्ये range(3) डीफॉल्टपणे 0 ने सुरू होऊन 3 च्या आधी (0, 1, 2) थांबते.",
+      "narration": "Python मध्ये range(3) कोणत्या संख्यांचा क्रम तयार करते?",
+      "duration_ms": 7500
     }
   ]
 }

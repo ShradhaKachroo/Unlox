@@ -36,6 +36,22 @@
         "Iteration 2: i = 1",
         "Iteration 3: i = 2"
       ]
+    },
+    {
+      "type": "quiz",
+      "id": "scene-quiz",
+      "heading": "Python Loops జ్ఞాన పరీక్ష",
+      "question": "Python లో range(3) ఏ సంఖ్యల క్రమాన్ని ఉత్పత్తి చేస్తుంది?",
+      "options": [
+        "0, 1, మరియు 2",
+        "1, 2, మరియు 3",
+        "0, 1, 2, మరియు 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "పైథాన్‌లో range(3) డిఫాల్ట్‌గా 0 నుండి ప్రారంభమై 3 కంటే ముందు (0, 1, 2) ఆగుతుంది.",
+      "narration": "Python లో range(3) ఏ సంఖ్యల క్రమాన్ని ఉత్పత్తి చేస్తుంది?",
+      "duration_ms": 7500
     }
   ]
 }

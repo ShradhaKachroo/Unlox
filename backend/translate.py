@@ -17,6 +17,9 @@ NLLB_CODES = {
     "te": "tel_Telu",
     "bn": "ben_Beng",
     "mr": "mar_Deva",
+    "gu": "guj_Gujr",
+    "es": "spa_Latn",
+    "fr": "fra_Latn",
 }
 
 # Code words that must stay in English

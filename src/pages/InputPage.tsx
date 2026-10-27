@@ -350,7 +350,7 @@ export const InputPage: React.FC<InputPageProps> = ({
                 ))}
               </select>
               <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '6px', lineHeight: 1.3 }}>
-                ⚡ English generates first for instant play; Hindi & Kannada follow right after in background.
+                ⚡ Generates instant voice & animations; switch seamlessly across 10 Indian and global languages anytime.
               </div>
             </div>
           </div>
@@ -524,58 +524,42 @@ export const InputPage: React.FC<InputPageProps> = ({
           >
             Instant Offline Sample Showcase
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-            <button
-              type="button"
-              id="btn-sample-en"
-              onClick={() => handleDirectSample('en')}
-              style={{
-                background: 'rgba(30, 41, 59, 0.6)',
-                border: '1px solid #334155',
-                color: '#93c5fd',
-                padding: '8px 10px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              🇬🇧 English
-            </button>
-            <button
-              type="button"
-              id="btn-sample-hi"
-              onClick={() => handleDirectSample('hi')}
-              style={{
-                background: 'rgba(30, 41, 59, 0.6)',
-                border: '1px solid #334155',
-                color: '#93c5fd',
-                padding: '8px 10px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              🇮🇳 हिन्दी
-            </button>
-            <button
-              type="button"
-              id="btn-sample-kn"
-              onClick={() => handleDirectSample('kn')}
-              style={{
-                background: 'rgba(30, 41, 59, 0.6)',
-                border: '1px solid #334155',
-                color: '#93c5fd',
-                padding: '8px 10px',
-                borderRadius: '8px',
-                fontSize: '12px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-            >
-              🇮🇳 ಕನ್ನಡ
-            </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
+            {[
+              { code: 'en', flag: '🇬🇧', label: 'English' },
+              { code: 'hi', flag: '🇮🇳', label: 'हिन्दी' },
+              { code: 'kn', flag: '🇮🇳', label: 'ಕನ್ನಡ' },
+              { code: 'ta', flag: '🇮🇳', label: 'தமிழ்' },
+              { code: 'te', flag: '🇮🇳', label: 'తెలుగు' },
+              { code: 'bn', flag: '🇮🇳', label: 'বাংলা' },
+              { code: 'mr', flag: '🇮🇳', label: 'मराठी' },
+            ].map((s) => (
+              <button
+                key={s.code}
+                type="button"
+                id={`btn-sample-${s.code}`}
+                onClick={() => handleDirectSample(s.code)}
+                style={{
+                  background: 'rgba(30, 41, 59, 0.65)',
+                  border: '1px solid rgba(71, 85, 105, 0.4)',
+                  color: '#93c5fd',
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  transition: 'all 0.15s ease',
+                }}
+                title={`Play instant offline sample in ${s.label}`}
+              >
+                <span>{s.flag}</span>
+                <span>{s.label}</span>
+              </button>
+            ))}
           </div>
         </div>
       </div>

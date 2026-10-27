@@ -1,4 +1,5 @@
 import React from 'react';
+import { LANGUAGE_LABELS } from '../utils/fonts';
 
 interface ControlsProps {
   isPlaying: boolean;
@@ -19,12 +20,11 @@ interface ControlsProps {
   isExporting?: boolean;
 }
 
-// Only languages the backend TTS models actually support
-const AVAILABLE_LANGUAGES = [
-  { code: 'en', label: '🇬🇧 English' },
-  { code: 'hi', label: '🇮🇳 हिन्दी (Hindi)' },
-  { code: 'kn', label: '🇮🇳 ಕನ್ನಡ (Kannada)' },
-];
+export const AVAILABLE_LANGUAGES = Object.entries(LANGUAGE_LABELS).map(([code, info]) => ({
+  code,
+  label: `${info.flag} ${info.name} (${info.nativeName})`,
+  shortLabel: `${info.flag} ${info.name}`,
+}));
 
 export const Controls: React.FC<ControlsProps> = ({
   isPlaying,
@@ -43,19 +43,21 @@ export const Controls: React.FC<ControlsProps> = ({
   isExporting = false,
 }) => {
   const buttonStyle: React.CSSProperties = {
-    background: 'rgba(30, 41, 59, 0.7)',
-    border: '1px solid rgba(71, 85, 105, 0.5)',
+    background: 'rgba(30, 41, 59, 0.75)',
+    border: '1px solid rgba(71, 85, 105, 0.55)',
     color: '#f8fafc',
     borderRadius: '10px',
-    padding: '9px 16px',
-    fontSize: '14px',
+    padding: '9px 15px',
+    fontSize: '13px',
     fontWeight: 600,
     cursor: 'pointer',
-    display: 'flex',
+    display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
     outline: 'none',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.25)',
+    transition: 'all 0.18s ease',
+    whiteSpace: 'nowrap',
   };
 
   const primaryButtonStyle: React.CSSProperties = {
@@ -64,11 +66,13 @@ export const Controls: React.FC<ControlsProps> = ({
       ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)'
       : 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
     border: '1px solid #38bdf8',
-    padding: '10px 22px',
-    fontSize: '15px',
+    padding: '9px 20px',
+    fontSize: '14px',
     fontWeight: 700,
-    boxShadow: '0 0 20px rgba(14, 165, 233, 0.4)',
+    boxShadow: '0 0 20px rgba(14, 165, 233, 0.45)',
   };
+
+  const currentLangInfo = LANGUAGE_LABELS[currentLanguage] || { name: currentLanguage, nativeName: currentLanguage, flag: '🌐' };
 
   return (
     <div
@@ -79,10 +83,10 @@ export const Controls: React.FC<ControlsProps> = ({
         justifyContent: 'space-between',
         width: '100%',
         flexWrap: 'wrap',
-        gap: '10px',
+        gap: '12px',
       }}
     >
-      {/* Action Buttons */}
+      {/* Group 1: Playback Navigation Controls */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         <button
           id="btn-prev"
@@ -102,7 +106,7 @@ export const Controls: React.FC<ControlsProps> = ({
           style={primaryButtonStyle}
           title="Play / Pause (Space)"
         >
-          <span style={{ fontSize: '16px' }}>{isPlaying ? '⏸' : '▶'}</span>
+          <span style={{ fontSize: '15px' }}>{isPlaying ? '⏸' : '▶'}</span>
           <span>{isPlaying ? 'Pause' : 'Play'}</span>
         </button>
 
@@ -135,8 +139,8 @@ export const Controls: React.FC<ControlsProps> = ({
             onClick={onToggleMute}
             style={{
               ...buttonStyle,
-              background: isMuted ? 'rgba(239, 68, 68, 0.2)' : 'rgba(30, 41, 59, 0.7)',
-              borderColor: isMuted ? '#ef4444' : 'rgba(71, 85, 105, 0.5)',
+              background: isMuted ? 'rgba(239, 68, 68, 0.18)' : 'rgba(30, 41, 59, 0.75)',
+              borderColor: isMuted ? '#ef4444' : 'rgba(71, 85, 105, 0.55)',
               color: isMuted ? '#fca5a5' : '#38bdf8',
             }}
             title={isMuted ? 'Unmute Voice' : 'Mute Voice'}
@@ -145,85 +149,89 @@ export const Controls: React.FC<ControlsProps> = ({
             <span>{isMuted ? 'Muted' : 'Voice On'}</span>
           </button>
         )}
+      </div>
 
-        {/* Revoice Language Switcher */}
-        {onLanguageChange && (
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <select
-                id="select-language"
-                className="control-btn"
-                value={currentLanguage}
-                onChange={(e) => onLanguageChange(e.target.value)}
-                disabled={isRevoicing}
-                style={{
-                  ...buttonStyle,
-                  appearance: 'none',
-                  paddingRight: '28px',
-                  background: isRevoicing ? 'rgba(14, 165, 233, 0.1)' : 'rgba(30, 41, 59, 0.85)',
-                  border: isRevoicing ? '1.5px solid rgba(56, 189, 248, 0.8)' : '1.5px solid rgba(56, 189, 248, 0.4)',
-                  color: '#38bdf8',
-                  cursor: isRevoicing ? 'wait' : 'pointer',
-                  opacity: isRevoicing ? 0.7 : 1,
-                  transition: 'all 0.2s ease',
-                }}
-                title="Switch lesson language (English, Hindi, Kannada)"
-              >
-                {AVAILABLE_LANGUAGES.map((lang) => {
-                  const status = voiceStatuses?.[lang.code];
-                  let statusBadge = '';
-                  if (status === 'ready') statusBadge = '✓ Ready';
-                  else if (status === 'generating') statusBadge = '⏳ Generating...';
-                  else if (status === 'pending') statusBadge = '⏳ Queued';
-                  return (
-                    <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#ffffff' }}>
-                      {lang.label} {statusBadge ? `(${statusBadge})` : ''}
-                    </option>
-                  );
-                })}
-              </select>
-              <span
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  pointerEvents: 'none',
-                  fontSize: '10px',
-                  color: '#38bdf8',
-                }}
-              >
-                {isRevoicing ? (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: '10px',
-                      height: '10px',
-                      border: '2px solid rgba(56, 189, 248, 0.3)',
-                      borderTopColor: '#38bdf8',
-                      borderRadius: '50%',
-                      animation: 'spin 0.8s linear infinite',
-                    }}
-                  />
-                ) : '▼'}
-              </span>
-            </div>
-            {isRevoicing ? (
-              <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                Generating...
-              </span>
-            ) : voiceStatuses && (
-              <span style={{ fontSize: '11px', fontWeight: 600, whiteSpace: 'nowrap', display: 'flex', gap: '4px', alignItems: 'center' }}>
-                {voiceStatuses['en'] === 'ready' && voiceStatuses['hi'] === 'ready' && voiceStatuses['kn'] === 'ready' ? (
-                  <span style={{ color: '#4ade80' }} title="English, Hindi, and Kannada voices ready">EN · HI · KN Ready ✓</span>
-                ) : voiceStatuses['hi'] === 'generating' || voiceStatuses['kn'] === 'generating' ? (
-                  <span style={{ color: '#38bdf8' }}>⏳ Synthesizing voice...</span>
-                ) : (
-                  <span style={{ color: '#94a3b8' }}>Background voices in queue</span>
-                )}
-              </span>
-            )}
+      {/* Group 2: Language Selector Pill */}
+      {onLanguageChange && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap' }}>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <select
+              id="select-language"
+              className="control-btn"
+              value={currentLanguage}
+              onChange={(e) => onLanguageChange(e.target.value)}
+              disabled={isRevoicing}
+              style={{
+                ...buttonStyle,
+                appearance: 'none',
+                paddingRight: '30px',
+                paddingLeft: '14px',
+                background: isRevoicing ? 'rgba(14, 165, 233, 0.12)' : 'rgba(15, 23, 42, 0.85)',
+                border: isRevoicing ? '1.5px solid rgba(56, 189, 248, 0.8)' : '1.5px solid rgba(56, 189, 248, 0.45)',
+                color: '#38bdf8',
+                cursor: isRevoicing ? 'wait' : 'pointer',
+                opacity: isRevoicing ? 0.7 : 1,
+                fontSize: '13px',
+                fontWeight: 700,
+              }}
+              title="Switch lesson language"
+            >
+              {AVAILABLE_LANGUAGES.map((lang) => {
+                const status = voiceStatuses?.[lang.code];
+                let statusBadge = '';
+                if (status === 'ready') statusBadge = '✓ Ready';
+                else if (status === 'generating') statusBadge = '⏳ Synthesizing...';
+                else if (status === 'pending') statusBadge = '⏳ Queued';
+                return (
+                  <option key={lang.code} value={lang.code} style={{ background: '#090d16', color: '#ffffff' }}>
+                    {lang.label} {statusBadge ? `(${statusBadge})` : ''}
+                  </option>
+                );
+              })}
+            </select>
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                pointerEvents: 'none',
+                fontSize: '10px',
+                color: '#38bdf8',
+              }}
+            >
+              {isRevoicing ? (
+                <span
+                  style={{
+                    display: 'inline-block',
+                    width: '10px',
+                    height: '10px',
+                    border: '2px solid rgba(56, 189, 248, 0.3)',
+                    borderTopColor: '#38bdf8',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                  }}
+                />
+              ) : (
+                '▼'
+              )}
+            </span>
           </div>
-        )}
 
+          {/* Revoice Status Hint */}
+          {isRevoicing ? (
+            <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              Synthesizing...
+            </span>
+          ) : (
+            <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ color: '#22c55e' }}>●</span>
+              <span>{currentLangInfo.flag} {currentLangInfo.name}</span>
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Group 3: Preferences & Export Actions */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
         {onOpenSettings && (
           <button
             id="btn-settings-toggle"
@@ -231,7 +239,7 @@ export const Controls: React.FC<ControlsProps> = ({
             onClick={onOpenSettings}
             style={{
               ...buttonStyle,
-              background: 'rgba(30, 41, 59, 0.85)',
+              background: 'rgba(30, 41, 59, 0.8)',
               borderColor: 'rgba(56, 189, 248, 0.35)',
               color: '#38bdf8',
             }}
@@ -253,11 +261,11 @@ export const Controls: React.FC<ControlsProps> = ({
               background: isExporting
                 ? 'rgba(168, 85, 247, 0.25)'
                 : 'linear-gradient(135deg, rgba(147, 51, 234, 0.25) 0%, rgba(126, 34, 206, 0.35) 100%)',
-              borderColor: isExporting ? '#c084fc' : 'rgba(192, 132, 252, 0.5)',
+              borderColor: isExporting ? '#c084fc' : 'rgba(192, 132, 252, 0.55)',
               color: '#f3e8ff',
-              boxShadow: '0 0 15px rgba(168, 85, 247, 0.2)',
+              boxShadow: '0 0 16px rgba(168, 85, 247, 0.25)',
               cursor: isExporting ? 'wait' : 'pointer',
-              transition: 'all 0.2s ease',
+              fontWeight: 700,
             }}
             title="Download playable 720p MP4 of the full lesson with audio & captions"
           >
@@ -278,7 +286,7 @@ export const Controls: React.FC<ControlsProps> = ({
               </>
             ) : (
               <>
-                <span style={{ fontSize: '15px' }}>📥</span>
+                <span style={{ fontSize: '14px' }}>📥</span>
                 <span>Download MP4</span>
               </>
             )}
@@ -294,16 +302,19 @@ export const Controls: React.FC<ControlsProps> = ({
           alignItems: 'center',
           gap: '10px',
           color: '#64748b',
-          fontSize: '12px',
+          fontSize: '11px',
           fontFamily: '"JetBrains Mono", monospace',
+          width: '100%',
+          justifyContent: 'flex-end',
+          marginTop: '2px',
         }}
       >
         <span>
-          <kbd style={{ background: '#1e293b', padding: '2px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1' }}>Space</kbd> Play/Pause
+          <kbd style={{ background: '#1e293b', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1' }}>Space</kbd> Play/Pause
         </span>
         <span>
-          <kbd style={{ background: '#1e293b', padding: '2px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1' }}>←</kbd>
-          <kbd style={{ background: '#1e293b', padding: '2px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1', marginLeft: '3px' }}>→</kbd> Scenes
+          <kbd style={{ background: '#1e293b', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1' }}>←</kbd>
+          <kbd style={{ background: '#1e293b', padding: '1px 5px', borderRadius: '4px', border: '1px solid #334155', color: '#cbd5e1', marginLeft: '3px' }}>→</kbd> Scenes
         </span>
       </div>
     </div>

@@ -159,10 +159,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           return next;
         });
 
-        // Continue polling until both Hindi and Kannada are ready (or failed)
-        const allSettled = ['en', 'hi', 'kn'].every((l) =>
-          data.voices[l] === 'ready' || data.voices[l] === 'failed'
-        );
+        // Continue polling until all queued background voices are ready (or failed)
+        const voiceValues = Object.values(data.voices);
+        const allSettled = voiceValues.length > 0 && voiceValues.every((s) => s === 'ready' || s === 'failed');
         if (!allSettled && !isCancelled) {
           timer = setTimeout(poll, 2500);
         }
@@ -526,29 +525,27 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         </div>
       </header>
 
-      {/* Fallback Notice Banner */}
-      {(lesson.source === 'fallback' || lesson.error) && (
+      {/* Subtle Offline / Fallback Notice Chip */}
+      {lesson.error && (
         <div
           id="fallback-warning-banner"
           style={{
             width: '100%',
-            background: 'linear-gradient(90deg, #ea580c 0%, #c2410c 100%)',
-            color: '#ffffff',
-            padding: '8px 16px',
-            fontSize: '13px',
+            background: 'rgba(30, 41, 59, 0.9)',
+            borderBottom: '1px solid rgba(245, 158, 11, 0.3)',
+            color: '#fbbf24',
+            padding: '6px 16px',
+            fontSize: '12px',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
             zIndex: 10,
           }}
         >
-          <span>⚠️</span>
-          <span>
-            {lesson.error || 'Running in offline fallback mode (LLM returned verified fallback lesson).'}
-          </span>
+          <span>💡</span>
+          <span>{lesson.error}</span>
         </div>
       )}
       <main

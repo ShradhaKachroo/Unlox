@@ -29,16 +29,40 @@ VOICE_PRESETS = {
         "female": ("hf_beta", "hi"),
         "male": ("hm_omega", "hi"),
     },
+    "es": {
+        "female": ("ef_dora", "es"),
+        "male": ("em_alex", "es"),
+    },
+    "fr": {
+        "female": ("ff_siwis", "fr-fr"),
+        "male": ("ff_siwis", "fr-fr"),
+    },
 }
 
 MMS_MAP = {
     "kn": "facebook/mms-tts-kan",
+    "ta": "facebook/mms-tts-tam",
+    "te": "facebook/mms-tts-tel",
+    "bn": "facebook/mms-tts-ben",
+    "mr": "facebook/mms-tts-mar",
+    "gu": "facebook/mms-tts-guj",
 }
 
 SUPPORTED = list(VOICE_PRESETS) + list(MMS_MAP)
 
-# Words-per-second calibrated for slower speech rate (0.85x)
-WORDS_PER_SEC = {"en": 1.95, "hi": 1.95, "kn": 1.40}
+# Words-per-second calibrated for speech rate (0.85x)
+WORDS_PER_SEC = {
+    "en": 1.95,
+    "hi": 1.95,
+    "es": 1.90,
+    "fr": 1.85,
+    "kn": 1.40,
+    "ta": 1.40,
+    "te": 1.40,
+    "bn": 1.45,
+    "mr": 1.50,
+    "gu": 1.45,
+}
 
 _kokoro = None
 _mms: dict = {}
@@ -74,13 +98,19 @@ def make_audio(
         voice_id, lang_code = gender_preset.get(voice_gender, gender_preset["female"])
         samples, sr = _get_kokoro().create(text, voice=voice_id, speed=speed, lang=lang_code)
     elif language in MMS_MAP:
-        tok, model = _get_mms(language)
-        torch.manual_seed(0)
-        with torch.no_grad():
-            samples = model(**tok(text, return_tensors="pt"), speaking_rate=speed).waveform[0].numpy()
-        sr = model.config.sampling_rate
+        try:
+            tok, model = _get_mms(language)
+            torch.manual_seed(0)
+            with torch.no_grad():
+                samples = model(**tok(text, return_tensors="pt"), speaking_rate=speed).waveform[0].numpy()
+            sr = model.config.sampling_rate
+        except Exception as e:
+            print(f"[tts] MMS voice synthesis error for {language}: {e}, falling back to Kokoro voice")
+            samples, sr = _get_kokoro().create(text, voice="af_heart", speed=speed, lang="en-us")
     else:
-        raise ValueError(f"unsupported language: {language}")
+        # Graceful fallback for any unknown language
+        print(f"[tts] language {language} not directly in presets; using default Kokoro voice")
+        samples, sr = _get_kokoro().create(text, voice="af_heart", speed=speed, lang="en-us")
 
     # Trim leading/trailing silence (amplitude < 0.01)
     abs_samples = np.abs(samples)

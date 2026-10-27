@@ -36,6 +36,22 @@
         "Iteration 2: i = 1",
         "Iteration 3: i = 2"
       ]
+    },
+    {
+      "type": "quiz",
+      "id": "scene-quiz",
+      "heading": "Python Loops அறிவுச் சோதனை",
+      "question": "Python இல் range(3) எந்த எண் வரிசையை உருவாக்குகிறது?",
+      "options": [
+        "0, 1, மற்றும் 2",
+        "1, 2, மற்றும் 3",
+        "0, 1, 2, மற்றும் 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "Python இல் range(3) என்பது 0 இலிருந்து தொடங்கி 3 க்கு முன் (0, 1, 2) முடிவடைகிறது.",
+      "narration": "Python இல் range(3) எந்த எண் வரிசையை உருவாக்குகிறது?",
+      "duration_ms": 7500
     }
   ]
 }
