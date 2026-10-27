@@ -1,0 +1,30 @@
+{
+  "language": "en",
+  "total_seconds": 12.74,
+  "scenes": [
+    {
+      "scene": 0,
+      "audio": "scene_0_en.wav",
+      "audio_seconds": 3.99,
+      "start": 0.0,
+      "duration": 4.59,
+      "caption": "A loop repeats an instruction for each value in a sequence."
+    },
+    {
+      "scene": 1,
+      "audio": "scene_1_en.wav",
+      "audio_seconds": 3.63,
+      "start": 4.59,
+      "duration": 4.23,
+      "caption": "Range of three gives three values: zero, one and two."
+    },
+    {
+      "scene": 2,
+      "audio": "scene_2_en.wav",
+      "audio_seconds": 3.33,
+      "start": 8.82,
+      "duration": 3.93,
+      "caption": "Each pass takes the next value, then runs print i."
+    }
+  ]
+}
