@@ -253,6 +253,7 @@ def plan_lesson(
 
     for attempt in range(1, MAX_ATTEMPTS + 1):
         start = time.time()
+        r = None
         try:
             r = chat(
                 model=MODEL,
@@ -289,7 +290,7 @@ def plan_lesson(
         except ValidationError as e:
             msg = e.errors()[0]["msg"]
             print(f"[planner] attempt {attempt} schema error: {msg}")
-            if 'r' in dir():
+            if r is not None and hasattr(r, 'message') and r.message.content:
                 messages.append({"role": "assistant", "content": r.message.content})
                 messages.append({
                     "role": "user",

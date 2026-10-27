@@ -118,6 +118,20 @@ class Scene(BaseModel):
         s = str(v).strip()
         return s[:700] if len(s) >= 5 else s + " Let's learn."
 
+    @field_validator("question", mode="before")
+    @classmethod
+    def coerce_question(cls, v):
+        if not v or not str(v).strip():
+            return None
+        return str(v).strip()[:140]
+
+    @field_validator("explanation", mode="before")
+    @classmethod
+    def coerce_explanation(cls, v):
+        if not v or not str(v).strip():
+            return None
+        return str(v).strip()[:180]
+
     @field_validator("items", mode="before")
     @classmethod
     def coerce_items(cls, v):
@@ -226,6 +240,32 @@ class Lesson(BaseModel):
     language: str = "en"
     scenes: list[Scene] = Field(min_length=2, max_length=12)  # model_validator caps output at 10
 
+    @field_validator("title", mode="before")
+    @classmethod
+    def coerce_title(cls, v):
+        if not v or not str(v).strip():
+            return "Visual Coding Lesson"
+        return str(v).strip()[:100]
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalize_level(cls, v):
+        if not isinstance(v, str):
+            return "beginner"
+        v = v.lower().strip()
+        if "adv" in v:
+            return "advanced"
+        if "inter" in v or "med" in v:
+            return "intermediate"
+        return "beginner"
+
+    @field_validator("scenes", mode="before")
+    @classmethod
+    def coerce_scenes(cls, v):
+        if not isinstance(v, list) or len(v) == 0:
+            return []
+        return v
+
     @model_validator(mode="after")
     def check_lesson(self):
         # Guarantee first scene is title_card
@@ -287,13 +327,20 @@ def parse_lesson(raw_json: str) -> Lesson:
     if first_brace != -1 and last_brace != -1:
         raw = raw[first_brace : last_brace + 1]
 
-    # Try standard json load first
+    import re
+    # Clean trailing commas: ,] -> ] and ,} -> }
+    cleaned = re.sub(r",\s*([\]}])", r"\1", raw)
+
     try:
-        data = json.loads(raw)
+        data = json.loads(cleaned, strict=False)
     except Exception:
-        import re
-        # Clean trailing commas: ,] -> ] and ,} -> }
-        cleaned = re.sub(r",\s*([\]}])", r"\1", raw)
-        data = json.loads(cleaned)
+        try:
+            data = json.loads(raw, strict=False)
+        except Exception:
+            import ast
+            try:
+                data = ast.literal_eval(raw)
+            except Exception:
+                data = json.loads(raw)
 
     return Lesson.model_validate(data)

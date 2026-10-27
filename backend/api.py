@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from planner import plan_lesson
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from schema import Lesson
 from translate import translate_lesson, translate_text
 from tts import HERE, SUPPORTED, build_timing
@@ -385,6 +385,18 @@ class GenerateRequest(BaseModel):
     simpler: bool = False
     previous_question: Optional[str] = None
     generate_all_voices: bool = True  # Automatically generate Hindi then Kannada after English
+
+    @field_validator("level", mode="before")
+    @classmethod
+    def normalize_level(cls, v):
+        if not isinstance(v, str):
+            return "beginner"
+        v = v.lower().strip()
+        if "adv" in v:
+            return "advanced"
+        if "inter" in v or "med" in v:
+            return "intermediate"
+        return "beginner"
 
 
 class RevoiceRequest(BaseModel):
