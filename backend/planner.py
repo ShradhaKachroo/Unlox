@@ -1,8 +1,8 @@
 import time
-from typing import Optional
+from typing import Literal, Optional
 
 from ollama import chat
-from pydantic import ValidationError
+from pydantic import BaseModel, Field, ValidationError
 
 from fallback import get_fallback_lesson
 from schema import Lesson, parse_lesson
@@ -11,7 +11,25 @@ MODEL = "phi3.5"
 MAX_ATTEMPTS = 3
 
 # ── Prompt version (keep in sync with api.py PROMPT_VERSION) ─────────────────
-PROMPT_VERSION = 4
+PROMPT_VERSION = 5
+
+class PlanScene(BaseModel):
+    type: Literal["title_card", "diagram", "code_walkthrough", "quiz"]
+    heading: str = Field(description="Clear, distinct title for this specific slide")
+    narration: str = Field(min_length=15, description="Full spoken teaching explanation for this specific slide. Must directly explain the slide's visual content. NEVER duplicate narrations.")
+    code: Optional[str] = Field(default=None, description="Python code snippet if this is a code_walkthrough slide")
+    highlight_lines: Optional[list[int]] = Field(default=None, description="1-based lines of code to highlight")
+    items: Optional[list[str]] = Field(default=None, description="List of step strings if this is a diagram slide")
+    question: Optional[str] = Field(default=None, description="Conceptual question if this is a quiz slide")
+    options: Optional[list[str]] = Field(default=None, description="Multiple choice options for quiz slide")
+    correct_index: Optional[int] = Field(default=0, description="0-based index of correct option")
+    explanation: Optional[str] = Field(default=None, description="Brief explanation why the answer is correct")
+    mood: Optional[Literal["happy", "thinking", "excited", "curious"]] = "happy"
+
+class PlanLesson(BaseModel):
+    title: str = Field(description="Title of the lesson")
+    level: Literal["beginner", "intermediate", "advanced"] = "beginner"
+    scenes: list[PlanScene] = Field(description="Ordered list of visual lesson scenes ending with a quiz")
 
 # ── Words-per-second (calibrated for 0.85x speech rate) ───────────────────────
 WORDS_PER_SEC = {"en": 1.75, "hi": 1.75, "kn": 1.75}
@@ -163,7 +181,7 @@ Rules:
     "explanation": 1 concise sentence explaining why the correct answer is right, max 150 chars,
     "narration": reads the question aloud (same as question text)
   }}{prev_q_rule}
-- "narration": {narration_hint}
+- "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual code, diagram steps, or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
 - "mood": one of "happy" | "thinking" | "excited" | "curious"
 
 JSON Schema:
@@ -258,7 +276,7 @@ def plan_lesson(
             r = chat(
                 model=MODEL,
                 messages=messages,
-                format=Lesson.model_json_schema(),
+                format=PlanLesson.model_json_schema(),
                 options={
                     "temperature": 0.35,
                     "repeat_penalty": 1.15,

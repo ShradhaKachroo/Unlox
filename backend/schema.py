@@ -158,6 +158,42 @@ class Scene(BaseModel):
             return parts
         return v
 
+    @model_validator(mode="before")
+    @classmethod
+    def extract_scene_fields(cls, data):
+        if not isinstance(data, dict):
+            return data
+
+        scene_type = str(data.get("type", "")).lower()
+
+        # 1. If 'narration' is missing or generic, salvage from explanation or caption
+        raw_narration = str(data.get("narration") or "").strip()
+        if not raw_narration or raw_narration == "Let's explore this step in detail to understand how it works.":
+            if "quiz" not in scene_type and data.get("explanation"):
+                data["narration"] = str(data["explanation"]).strip()
+            elif data.get("description"):
+                data["narration"] = str(data["description"]).strip()
+            elif data.get("script"):
+                data["narration"] = str(data["script"]).strip()
+            elif data.get("caption") and not any(k in str(data.get("caption")) for k in ("def ", "class ", "import ", "=", "print", "\n")):
+                data["narration"] = str(data["caption"]).strip()
+
+        # 2. If 'code' is missing but 'caption' has code, salvage it
+        if "code" in scene_type and (not data.get("code") or not str(data.get("code")).strip()):
+            caption = str(data.get("caption") or "")
+            if any(k in caption for k in ("\n", "def ", "class ", "import ", "=", "print", "for ", "while ")):
+                data["code"] = caption
+            elif data.get("explanation") and any(k in str(data.get("explanation")) for k in ("\n", "def ", "print(")):
+                data["code"] = data["explanation"]
+
+        # 3. If 'heading' is missing or generic, salvage from question or title
+        raw_heading = str(data.get("heading") or "").strip()
+        if not raw_heading or raw_heading == "Key Concept":
+            if data.get("question") and "quiz" not in scene_type:
+                data["heading"] = str(data["question"])[:80].strip()
+
+        return data
+
     @model_validator(mode="after")
     def check_scene(self):
         if self.type == "code_walkthrough":
@@ -302,6 +338,39 @@ class Lesson(BaseModel):
                 if s.code in seen:
                     s.code = s.code + f"\n# Step {idx + 1}"
                 seen.add(s.code)
+
+        # Guarantee every scene has distinct, slide-specific narration according to its visual content
+        seen_narrations = set()
+        for idx, s in enumerate(self.scenes):
+            if s.type == "quiz":
+                if s.question:
+                    s.narration = s.question
+                continue
+
+            cleaned_narr = (s.narration or "").strip()
+            is_generic = (
+                not cleaned_narr
+                or "let's explore this step in detail" in cleaned_narr.lower()
+                or cleaned_narr in seen_narrations
+                or len(cleaned_narr) < 15
+            )
+
+            if is_generic:
+                # Dynamically generate slide-accurate narration based on this scene's heading & content
+                heading_text = s.heading if s.heading and s.heading != "Key Concept" else f"Step {idx + 1}"
+                if s.type == "title_card":
+                    s.narration = f"Welcome to this lesson exploring {self.title or heading_text}. Today we break down the core mechanics, practical patterns, and how it executes step by step."
+                elif s.type == "code_walkthrough":
+                    clean_code = (s.code or "").strip()
+                    first_line = clean_code.splitlines()[0] if clean_code else "the implementation"
+                    s.narration = f"Here in {heading_text}, examine how Python executes this block. Focusing on {first_line}, notice how the values and control flow advance sequentially."
+                elif s.type == "diagram":
+                    steps_summary = " followed by ".join(s.items[:3]) if s.items else "each sequential phase"
+                    s.narration = f"Looking at {heading_text}, observe the architectural flow progressing through {steps_summary}."
+                else:
+                    s.narration = f"In this section on {heading_text}, we focus on how the underlying program state changes during execution."
+
+            seen_narrations.add(s.narration)
 
         return self
 
