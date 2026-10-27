@@ -1,3 +1,4 @@
+import ast
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
@@ -19,8 +20,15 @@ class Scene(BaseModel):
             if not self.code:
                 raise ValueError("code_walkthrough needs code")
             n = len(self.code.splitlines())
-            if n > 6:
-                raise ValueError("code too long (max 6 lines)")
+            if n > 8:
+                raise ValueError("code too long (max 8 lines)")
+            try:
+                ast.parse(self.code)
+            except SyntaxError:
+                raise ValueError(
+                    "code has a Python syntax error: use double quotes "
+                    "around text that contains an apostrophe"
+                )
             if not self.highlight_lines or any(
                 line < 1 or line > n for line in self.highlight_lines
             ):
@@ -28,8 +36,11 @@ class Scene(BaseModel):
         if self.type == "diagram":
             if not self.items or not (3 <= len(self.items) <= 5):
                 raise ValueError("diagram needs 3-5 items")
-            if any(len(i) > 25 for i in self.items):
-                raise ValueError("diagram item too long (max 25 chars)")
+            too_long = [i for i in self.items if len(i) > 30]
+            if too_long:
+                raise ValueError(
+                    f"diagram item too long (max 30 chars): {too_long[0]!r}"
+                )
         return self
 
 
@@ -43,6 +54,9 @@ class Lesson(BaseModel):
     def check_lesson(self):
         if self.scenes[0].type != "title_card":
             raise ValueError("first scene must be a title_card")
+        codes = [s.code for s in self.scenes if s.code]
+        if len(codes) != len(set(codes)):
+            raise ValueError("two scenes repeat the same code")
         return self
 
 
