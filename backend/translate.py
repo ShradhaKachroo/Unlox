@@ -1,8 +1,9 @@
+import re
+
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 NAME = "facebook/nllb-200-distilled-600M"
 
-# our language code -> NLLB code
 NLLB_CODES = {
     "hi": "hin_Deva",
     "kn": "kan_Knda",
@@ -12,6 +13,9 @@ NLLB_CODES = {
     "mr": "mar_Deva",
 }
 
+# Code words that students say in English, so we never translate them
+KEEP = ["print", "range", "len", "input", "append", "elif"]
+KEEP_RE = re.compile(r"\b(" + "|".join(KEEP) + r")\b", re.IGNORECASE)
 _tok = None
 _model = None
 
@@ -24,15 +28,34 @@ def _load():
     return _tok, _model
 
 
-def translate_text(text, language):
+def _raw_translate(text, language):
     tok, model = _load()
     inputs = tok(text, return_tensors="pt")
     out = model.generate(
         **inputs,
         forced_bos_token_id=tok.convert_tokens_to_ids(NLLB_CODES[language]),
-        max_new_tokens=200,
+        max_length=200,
     )
     return tok.batch_decode(out, skip_special_tokens=True)[0]
+
+
+def translate_text(text, language):
+    kept = []
+
+    def hide(match):
+        kept.append(match.group(0).lower())
+        return f"XQ{len(kept)}Z"
+
+    hidden = KEEP_RE.sub(hide, text)
+    if not kept:
+        return _raw_translate(text, language)
+
+    out = _raw_translate(hidden, language)
+    for n, word in enumerate(kept, start=1):
+        if f"XQ{n}Z" not in out:
+            return _raw_translate(text, language)  # placeholder lost, so play it safe
+        out = out.replace(f"XQ{n}Z", word)
+    return out
 
 
 def _is_plain_words(text):
