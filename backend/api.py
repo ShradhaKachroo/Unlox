@@ -125,7 +125,7 @@ def generate(req: GenerateRequest):
         seconds["translate"] = round(time.time() - t, 1)
 
     t = time.time()
-    timing = build_timing(translated, req.language)
+    timing = build_timing(translated, req.language, voice=req.voice)
     seconds["voice"] = round(time.time() - t, 1)
 
     # Automatically generate full WAV and SRT for export/captions
@@ -183,7 +183,7 @@ def revoice(req: RevoiceRequest):
         base_lesson = Lesson.model_validate(cached.get("lesson") or cached)
 
     translated = translate_lesson(base_lesson, req.lang)
-    timing = build_timing(translated, req.lang)
+    timing = build_timing(translated, req.lang, voice=req.voice)
     try:
         export_audio_and_srt(req.lang)
     except Exception as e:
