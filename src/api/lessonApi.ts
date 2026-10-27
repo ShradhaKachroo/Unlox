@@ -27,7 +27,7 @@ export interface RevoiceParams {
  */
 export async function apiGenerateLesson(params: GenerateParams): Promise<Lesson> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 180000); // 180s (3min) timeout for CPU generation
 
   try {
     const res = await fetch(`${API_BASE_URL}/generate`, {
@@ -68,7 +68,7 @@ export async function apiRevoiceLesson(params: RevoiceParams): Promise<Lesson> {
   // 1. Attempt backend POST /revoice
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3500);
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s for local NLLB + TTS
 
     const res = await fetch(`${API_BASE_URL}/revoice`, {
       method: 'POST',

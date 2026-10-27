@@ -35,7 +35,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
     if (!topic.trim()) return;
 
     setLoading(true);
-    setStatusMessage('Contacting lesson generation backend...');
+    setStatusMessage('Generating lesson with local AI and synthesizing voice (typically 25-45s)...');
 
     try {
       const generatedLesson = await apiGenerateLesson({
@@ -46,18 +46,12 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
         voice: settings.voice,
         local_context: localContext,
       });
-      onLessonReady(generatedLesson, 'Backend API');
+      onLessonReady(generatedLesson, 'Generated Lesson');
       return;
-    } catch {
-      // Backend not running or call failed -> graceful offline fallback to sample
-      setStatusMessage(`Loading offline verified sample for [${language.toUpperCase()}]...`);
-      try {
-        const fallbackLesson = await fetchSampleLesson(language);
-        onLessonReady(fallbackLesson, `Offline Mode (${language.toUpperCase()})`);
-      } catch (fallbackErr) {
-        setStatusMessage(`Error: ${(fallbackErr as Error).message}`);
-        setLoading(false);
-      }
+    } catch (err) {
+      console.error('Generation failed:', err);
+      setStatusMessage(`Generation failed: ${(err as Error).message}. You can try again or check backend logs.`);
+      setLoading(false);
     }
   };
 
