@@ -1,0 +1,110 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+:root {
+  font-family: 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+  color: #f8fafc;
+  background-color: #040711;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #040711;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090d16;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Accessible focus ring */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
+/* Responsive Player Shell utilities */
+@media (max-width: 640px) {
+  .player-header {
+    height: 48px !important;
+    padding: 0 10px !important;
+    gap: 8px !important;
+  }
+  .player-header-title {
+    font-size: 13px !important;
+    max-width: 130px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .player-header-badge {
+    display: none !important;
+  }
+  .player-header-scene {
+    font-size: 11px !important;
+  }
+  .caption-container {
+    padding: 10px 14px !important;
+    min-height: 52px !important;
+  }
+  .caption-text {
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+  }
+  .caption-icon {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 13px !important;
+  }
+  .control-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+    gap: 4px !important;
+  }
+  .control-btn-primary {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+  }
+  .controls-row {
+    justify-content: center !important;
+  }
+  .keyboard-hints {
+    display: none !important;
+  }
+}

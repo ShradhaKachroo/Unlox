@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-en",
+  "title": "Understanding Python For Loops",
+  "level": "beginner",
+  "language": "en",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: Iterating with range()",
+      "subtitle": "Master how loops repeat actions step-by-step with clean execution",
+      "narration": "Welcome! Today we will learn how Python for loops work step-by-step using the range function.",
+      "caption": "Welcome! Today we will learn how Python for loops work step-by-step using the range function.",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "Walking Through the Code",
+      "narration": "Here is our loop: for i in range 3, we print the current iteration value. Watch how execution advances line by line.",
+      "caption": "Here is our loop: for i in range(3), we print the current iteration value. Watch how execution advances line by line.",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "Step-by-Step Iteration Flow",
+      "narration": "In the first cycle, i is 0. In the second cycle, i becomes 1. Finally, i reaches 2 before the loop exits cleanly.",
+      "caption": "In the first cycle, i is 0. In the second cycle, i becomes 1. Finally, i reaches 2 before the loop exits cleanly.",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

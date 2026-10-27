@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-hi",
+  "title": "Python For Loops को समझें",
+  "level": "beginner",
+  "language": "hi",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() के साथ पुनरावृत्ति",
+      "subtitle": "सीखें कि कैसे लूप एक-एक करके कार्यों को दोहराता है",
+      "narration": "नमस्ते! आज हम सीखेंगे कि पायथन में For Loops और range() फ़ंक्शन कैसे काम करते हैं।",
+      "caption": "नमस्ते! आज हम सीखेंगे कि पायथन में For Loops और range() फ़ंक्शन कैसे काम करते हैं।",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "Code का अवलोकन",
+      "narration": "यहाँ हमारा कोड है: for i in range(3)। ध्यान से देखें कि प्रत्येक लाइन कैसे निष्पादित होती है।",
+      "caption": "यहाँ हमारा कोड है: for i in range(3)। ध्यान से देखें कि प्रत्येक लाइन कैसे निष्पादित होती है।",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "प्रत्येक Iteration का प्रवाह",
+      "narration": "पहले चक्र में i = 0 होता है। फिर i = 1 होता है, और अंत में i = 2 होकर लूप समाप्त हो जाता है।",
+      "caption": "पहले चक्र में i = 0 होता है। फिर i = 1 होता है, और अंत में i = 2 होकर लूप समाप्त हो जाता है।",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

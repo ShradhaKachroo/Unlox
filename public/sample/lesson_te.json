@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-te",
+  "title": "Python For Loops నేర్చుకుందాం",
+  "level": "beginner",
+  "language": "te",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() తో పునరావృతం",
+      "subtitle": "లూప్‌లు స్టెప్ బై స్టెప్ ఎలా పనిచేస్తాయో తెలుసుకోండి",
+      "narration": "నమస్కారం! ఈ రోజు మనం పైథాన్‌లో For Loops మరియు range() ఫంక్షన్ ఎలా పనిచేస్తుందో నేర్చుకుందాం.",
+      "caption": "నమస్కారం! ఈ రోజు మనం పైథాన్‌లో For Loops మరియు range() ఫంక్షన్ ఎలా పనిచేస్తుందో నేర్చుకుందాం.",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "కోడ్ పరిశీలన",
+      "narration": "ఇది మన కోడ్: for i in range(3). ప్రతి లైన్ ఎలా రన్ అవుతుందో గమనించండి.",
+      "caption": "ఇది మన కోడ్: for i in range(3). ప్రతి లైన్ ఎలా రన్ అవుతుందో గమనించండి.",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "ప్రతి Iteration ప్రవాహం",
+      "narration": "మొదటి దశలో i = 0. తరువాత i = 1, చివరగా i = 2 అయి లూప్ పూర్తవుతుంది.",
+      "caption": "మొదటి దశలో i = 0. తరువాత i = 1, చివరగా i = 2 అయి లూప్ పూర్తవుతుంది.",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

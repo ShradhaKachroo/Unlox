@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-bn",
+  "title": "Python For Loops শিখুন",
+  "level": "beginner",
+  "language": "bn",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() এর সাথে পুনরাবৃত্তি",
+      "subtitle": "লুপ কীভাবে ধাপে ধাপে কাজ করে তা সহজ ভাষায় শিখুন",
+      "narration": "স্বাগতম! আজ আমরা শিখব পাইথনে For Loops এবং range() কীভাবে কাজ করে।",
+      "caption": "স্বাগতম! আজ আমরা শিখব পাইথনে For Loops এবং range() কীভাবে কাজ করে।",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "কোড বিশ্লেষণ",
+      "narration": "এখানে আমাদের কোড: for i in range(3)। প্রতি লাইন কীভাবে কার্যকর হয় তা লক্ষ্য করুন।",
+      "caption": "এখানে আমাদের কোড: for i in range(3)। প্রতি লাইন কীভাবে কার্যকর হয় তা লক্ষ্য করুন।",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "প্রতিটি Iteration এর প্রবাহ",
+      "narration": "প্রথম ধাপে i = 0। তারপর i = 1, এবং অবশেষে i = 2 হয়ে লুপ শেষ হয়।",
+      "caption": "প্রথম ধাপে i = 0। তারপর i = 1, এবং অবশেষে i = 2 হয়ে লুপ শেষ হয়।",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

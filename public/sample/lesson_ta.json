@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-ta",
+  "title": "Python For Loops புரிந்து கொள்வோம்",
+  "level": "beginner",
+  "language": "ta",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() உடன் மறு செய்கை",
+      "subtitle": "லூப்கள் எவ்வாறு படிகளை வரிசையாகச் செய்கின்றன என்பதைக் கற்றுக்கொள்ளுங்கள்",
+      "narration": "வணக்கம்! இன்று நாம் பைத்தானில் For Loops மற்றும் range() எவ்வாறு செயல்படுகின்றன என்பதைப் பார்ப்போம்.",
+      "caption": "வணக்கம்! இன்று நாம் பைத்தானில் For Loops மற்றும் range() எவ்வாறு செயல்படுகின்றன என்பதைப் பார்ப்போம்.",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "குறியீட்டின் விளக்கம்",
+      "narration": "இதோ நம் நிரல்: for i in range(3). ஒவ்வொரு வரியும் எவ்வாறு இயங்குகிறது என்பதை கவனியுங்கள்.",
+      "caption": "இதோ நம் நிரல்: for i in range(3). ஒவ்வொரு வரியும் எவ்வாறு இயங்குகிறது என்பதை கவனியுங்கள்.",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "ஒவ்வொரு சுழற்சியின் படிநிலைகள்",
+      "narration": "முதல் சுழற்சியில் i = 0 ஆக இருக்கும். பிறகு i = 1 ஆகிறது, பின்னர் i = 2 உடன் லூப் நிறைவடைகிறது.",
+      "caption": "முதல் சுழற்சியில் i = 0 ஆக இருக்கும். பிறகு i = 1 ஆகிறது, பின்னர் i = 2 உடன் லூப் நிறைவடைகிறது.",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

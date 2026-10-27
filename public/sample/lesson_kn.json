@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-kn",
+  "title": "Python For Loops ತಿಳಿಯಿರಿ",
+  "level": "beginner",
+  "language": "kn",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() ನೊಂದಿಗೆ ಪುನರಾವರ್ತನೆ",
+      "subtitle": "ಲೂಪ್‌ಗಳು ಹಂತ ಹಂತವಾಗಿ ಕ್ರಿಯೆಗಳನ್ನು ಹೇಗೆ ಪುನರಾವರ್ತಿಸುತ್ತವೆ ಎಂಬುದನ್ನು ತಿಳಿಯಿರಿ",
+      "narration": "ನಮಸ್ಕಾರ! ಇಂದು ನಾವು ಪೈಥಾನ್‌ನಲ್ಲಿ For Loops ಮತ್ತು range() ಫಂಕ್ಷನ್ ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಎಂಬುದನ್ನು ಕಲಿಯುತ್ತೇವೆ.",
+      "caption": "ನಮಸ್ಕಾರ! ಇಂದು ನಾವು ಪೈಥಾನ್‌ನಲ್ಲಿ For Loops ಮತ್ತು range() ಫಂಕ್ಷನ್ ಹೇಗೆ ಕೆಲಸ ಮಾಡುತ್ತದೆ ಎಂಬುದನ್ನು ಕಲಿಯುತ್ತೇವೆ.",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "ಕೋಡ್ ವಿಶ್ಲೇಷಣೆ",
+      "narration": "ಇಲ್ಲಿ ನಮ್ಮ ಕೋಡ್ ಇದೆ: for i in range(3). ಪ್ರತಿ ಲೈನ್ ಹೇಗೆ ಕಾರ್ಯಗತಗೊಳ್ಳುತ್ತದೆ ಎಂಬುದನ್ನು ಗಮನಿಸಿ.",
+      "caption": "ಇಲ್ಲಿ ನಮ್ಮ ಕೋಡ್ ಇದೆ: for i in range(3). ಪ್ರತಿ ಲೈನ್ ಹೇಗೆ ಕಾರ್ಯಗತಗೊಳ್ಳುತ್ತದೆ ಎಂಬುದನ್ನು ಗಮನಿಸಿ.",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "ಪ್ರತಿ Iteration ನ ಹರಿವು",
+      "narration": "ಮೊದಲ ಹಂತದಲ್ಲಿ i = 0 ಆಗಿರುತ್ತದೆ. ನಂತರ i = 1 ಆಗುತ್ತದೆ, ಮತ್ತು ಕೊನೆಯಲ್ಲಿ i = 2 ಆಗಿ ಲೂಪ್ ಮುಕ್ತಾಯಗೊಳ್ಳುತ್ತದೆ.",
+      "caption": "ಮೊದಲ ಹಂತದಲ್ಲಿ i = 0 ಆಗಿರುತ್ತದೆ. ನಂತರ i = 1 ಆಗುತ್ತದೆ, ಮತ್ತು ಕೊನೆಯಲ್ಲಿ i = 2 ಆಗಿ ಲೂಪ್ ಮುಕ್ತಾಯಗೊಳ್ಳುತ್ತದೆ.",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}

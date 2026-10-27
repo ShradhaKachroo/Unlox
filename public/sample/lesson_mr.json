@@ -1,0 +1,41 @@
+{
+  "id": "python-for-loop-mr",
+  "title": "Python For Loops समजून घ्या",
+  "level": "beginner",
+  "language": "mr",
+  "scenes": [
+    {
+      "type": "title_card",
+      "id": "scene-intro",
+      "heading": "Python For Loops: range() सह पुनरावृत्ती",
+      "subtitle": "लूप पायरीनुसार कसे काम करतो ते शिका",
+      "narration": "नमस्कार! आज आपण शिकणार आहोत की पायथनमध्ये For Loops आणि range() फंक्शन कसे कार्य करतात.",
+      "caption": "नमस्कार! आज आपण शिकणार आहोत की पायथनमध्ये For Loops आणि range() फंक्शन कसे कार्य करतात.",
+      "duration_ms": 7000
+    },
+    {
+      "type": "code_walkthrough",
+      "id": "scene-code",
+      "heading": "Code चे विश्लेषण",
+      "narration": "येथे आमचा कोड आहे: for i in range(3). प्रत्येक ओळ कशी चालते ते काळजीपूर्वक पहा.",
+      "caption": "येथे आमचा कोड आहे: for i in range(3). प्रत्येक ओळ कशी चालते ते काळजीपूर्वक पहा.",
+      "duration_ms": 8000,
+      "language_label": "Python",
+      "code": "# Python loop demonstration\nfor i in range(3):\n    print(\"Iteration value:\", i)\nprint(\"Loop completed!\")",
+      "highlight_lines": [2, 3, 4]
+    },
+    {
+      "type": "diagram",
+      "id": "scene-diagram",
+      "heading": "प्रत्येक Iteration चा प्रवाह",
+      "narration": "पहिल्या फेरीत i = 0 असते. नंतर i = 1 होते, आणि शेवटी i = 2 होऊन लूप समाप्त होतो.",
+      "caption": "पहिल्या फेरीत i = 0 असते. नंतर i = 1 होते, आणि शेवटी i = 2 होऊन लूप समाप्त होतो.",
+      "duration_ms": 7500,
+      "items": [
+        "Iteration 1: i = 0",
+        "Iteration 2: i = 1",
+        "Iteration 3: i = 2"
+      ]
+    }
+  ]
+}
