@@ -1,6 +1,6 @@
 {
   "language": "en",
-  "total_seconds": 17.75,
+  "total_seconds": 23.75,
   "scenes": [
     {
       "scene": 0,
@@ -33,6 +33,14 @@
       "start": 12.75,
       "duration": 5.0,
       "caption": "Think of a loop like a cricket over with 6 balls: for ball in range(6), bowl each ball."
+    },
+    {
+      "scene": 4,
+      "audio": null,
+      "audio_seconds": 4.5,
+      "start": 17.75,
+      "duration": 6.0,
+      "caption": "What sequence of numbers does range(3) produce in Python?"
     }
   ]
 }

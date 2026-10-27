@@ -48,6 +48,21 @@
       ],
       "items": null,
       "mood": "excited"
+    },
+    {
+      "type": "quiz",
+      "heading": "Loops Knowledge Check",
+      "question": "What sequence of numbers does range(3) produce in Python?",
+      "options": [
+        "0, 1, and 2",
+        "1, 2, and 3",
+        "0, 1, 2, and 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "range(3) starts at 0 by default and produces 3 numbers, stopping before 3: 0, 1, and 2.",
+      "narration": "What sequence of numbers does range(3) produce in Python?",
+      "mood": "happy"
     }
   ]
 }

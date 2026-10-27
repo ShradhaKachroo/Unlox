@@ -36,6 +36,22 @@
         "Iteration 2: i = 1",
         "Iteration 3: i = 2"
       ]
+    },
+    {
+      "type": "quiz",
+      "id": "scene-quiz",
+      "heading": "Loops ज्ञान परीक्षण",
+      "question": "Python में range(3) कौन से मान उत्पन्न करता है?",
+      "options": [
+        "0, 1, और 2",
+        "1, 2, और 3",
+        "0, 1, 2, और 3"
+      ],
+      "correct_index": 0,
+      "answer_idx": 0,
+      "explanation": "पायथन में range(3) डिफ़ॉल्ट रूप से 0 से शुरू होकर 3 से पहले (0, 1, 2) रुकता है।",
+      "narration": "Python में range(3) कौन से मान उत्पन्न करता है?",
+      "duration_ms": 7500
     }
   ]
 }

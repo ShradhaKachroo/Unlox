@@ -8,19 +8,75 @@ SceneType = Literal["title_card", "diagram", "code_walkthrough", "quiz"]
 MoodType = Literal["happy", "thinking", "excited", "curious"]
 
 
+def get_topic_quiz_defaults(context: str) -> tuple[str, list[str], str]:
+    """Provide realistic, high-quality quiz options based on context instead of generic placeholders."""
+    c_lower = (context or "").lower()
+    if any(k in c_lower for k in ("loop", "for", "while", "iteration", "range")):
+        return (
+            "What sequence of numbers does range(3) produce in Python?",
+            [
+                "0, 1, and 2",
+                "1, 2, and 3",
+                "0, 1, 2, and 3",
+            ],
+            "In Python, range(3) starts at 0 by default and produces 3 numbers, stopping before 3 (0, 1, 2).",
+        )
+    elif any(k in c_lower for k in ("search", "binary", "sort", "algorithm", "divide")):
+        return (
+            "What crucial condition must an array satisfy before using binary search?",
+            [
+                "The elements must be sorted in order",
+                "The array must contain only positive integers",
+                "The array length must be an even number",
+            ],
+            "Binary search relies on sorted order to discard half the search space at each comparison.",
+        )
+    elif any(k in c_lower for k in ("variable", "memory", "pointer", "assign")):
+        return (
+            "What happens in memory when you assign a variable in Python?",
+            [
+                "A named reference is created that points to the value in memory",
+                "The entire operating system memory is cleared and reset",
+                "The value is permanently converted into binary machine code",
+            ],
+            "Variables in Python act as names or references that point to objects allocated in memory.",
+        )
+    elif any(k in c_lower for k in ("recursion", "recursive", "stack", "call stack")):
+        return (
+            "What prevents a recursive function from running infinitely?",
+            [
+                "A base case that terminates repetition without calling itself",
+                "A while loop placed at the very top of the function",
+                "The computer automatically stops it after exactly ten iterations",
+            ],
+            "Every recursive function requires a base case to stop execution and unwind the call stack.",
+        )
+    else:
+        topic_name = context[:60].strip() or "this topic"
+        return (
+            f"What is the key takeaway when applying {topic_name}?",
+            [
+                "It enables writing cleaner, more predictable, and structured code",
+                "It eliminates the need for underlying computer hardware",
+                "It only works when running Python in debug mode",
+            ],
+            f"Mastering {topic_name} gives you precise control over program structure and execution.",
+        )
+
+
 class Scene(BaseModel):
     id: Optional[str] = None
     type: SceneType
-    heading: str = Field(min_length=1, max_length=100)
-    narration: str = Field(min_length=5, max_length=700)
+    heading: str = Field(default="Key Concept", min_length=1, max_length=100)
+    narration: str = Field(default="Let's explore this step in detail to understand how it works.", min_length=5, max_length=700)
     code: Optional[str] = None
     highlight_lines: Optional[list[int]] = None
     items: Optional[list] = None
-    question: Optional[str] = Field(default=None, max_length=120)
+    question: Optional[str] = Field(default=None, max_length=140)
     options: Optional[list] = None
     correct_index: Optional[int] = 0
     answer_idx: Optional[int] = 0
-    explanation: Optional[str] = Field(default=None, max_length=150)
+    explanation: Optional[str] = Field(default=None, max_length=180)
     mood: Optional[MoodType] = "happy"
     duration_ms: Optional[int] = None
     audio_url: Optional[str] = None
@@ -76,10 +132,15 @@ class Scene(BaseModel):
     @field_validator("options", mode="before")
     @classmethod
     def coerce_options(cls, v):
+        if isinstance(v, dict):
+            if "options" in v and isinstance(v["options"], list):
+                v = v["options"]
+            else:
+                v = list(v.values())
         if isinstance(v, str):
             parts = [p.strip() for p in v.split(",") if p.strip()]
             if len(parts) < 2:
-                parts = v.split()
+                parts = [p.strip() for p in v.splitlines() if p.strip()]
             return parts
         return v
 
@@ -115,16 +176,31 @@ class Scene(BaseModel):
             self.items = [str(i)[:40] for i in self.items]
 
         elif self.type == "quiz":
-            if not self.question:
-                self.question = self.heading[:120]
-            if len(self.question) > 120:
-                self.question = self.question[:120]
+            def_q, def_opts, def_exp = get_topic_quiz_defaults(self.heading or self.question or "Python Programming")
 
-            if not self.options or len(self.options) < 3:
-                self.options = ["A) Option 1", "B) Option 2", "C) Option 3"]
-            if len(self.options) > 4:
-                self.options = self.options[:4]
-            self.options = [str(opt)[:60] for opt in self.options]
+            if not self.question or len(self.question.strip()) < 5:
+                self.question = def_q
+            self.question = self.question[:140].strip()
+
+            # Clean and sanitize options (strip dictionaries or strings, max 120 chars)
+            cleaned_opts: list[str] = []
+            if self.options and isinstance(self.options, list):
+                for opt in self.options:
+                    if isinstance(opt, dict):
+                        opt_str = str(opt.get("text") or opt.get("option") or opt.get("value") or "").strip()
+                    else:
+                        opt_str = str(opt).strip()
+                    # Discard generic placeholder strings like "Option 1"
+                    if opt_str and not any(p in opt_str.lower() for p in ["option 1", "option 2", "option 3"]):
+                        cleaned_opts.append(opt_str[:120])
+
+            if len(cleaned_opts) < 3:
+                cleaned_opts = list(def_opts)
+
+            if len(cleaned_opts) > 4:
+                cleaned_opts = cleaned_opts[:4]
+
+            self.options = cleaned_opts
 
             # 0-based valid correct_index
             idx = self.correct_index if self.correct_index is not None else self.answer_idx
@@ -133,10 +209,9 @@ class Scene(BaseModel):
             self.correct_index = idx
             self.answer_idx = idx
 
-            if not self.explanation:
-                self.explanation = "Great job! This tests your understanding of the core idea."
-            if len(self.explanation) > 150:
-                self.explanation = self.explanation[:150]
+            if not self.explanation or len(self.explanation.strip()) < 5:
+                self.explanation = def_exp
+            self.explanation = self.explanation[:180].strip()
 
             # The narration reads the question aloud
             self.narration = self.question
@@ -158,15 +233,16 @@ class Lesson(BaseModel):
         quiz_scenes = [s for s in self.scenes if s.type == "quiz"]
 
         if not quiz_scenes:
+            def_q, def_opts, def_exp = get_topic_quiz_defaults(self.title)
             quiz = Scene(
                 type="quiz",
                 heading="Knowledge Check",
-                question=f"What is the core idea of {self.title[:80]}?",
-                options=["A) Option 1", "B) Option 2", "C) Option 3"],
+                question=def_q,
+                options=def_opts,
                 correct_index=0,
                 answer_idx=0,
-                explanation="This checks your understanding of the core concept.",
-                narration=f"What is the core idea of {self.title[:80]}?",
+                explanation=def_exp,
+                narration=def_q,
             )
         else:
             quiz = quiz_scenes[-1]

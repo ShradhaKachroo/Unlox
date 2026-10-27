@@ -11,7 +11,7 @@ import { SettingsModal } from './SettingsModal';
 import { useSettings } from '../context/useSettings';
 import { Blu } from '../mascot/Blu';
 import { getAnchor } from '../mascot/anchors';
-import { apiRevoiceLesson, apiGetVoices, apiExportLesson, triggerFileDownload } from '../api/lessonApi';
+import { apiRevoiceLesson, apiGetVoices, apiExportLesson, triggerFileDownload, API_BASE_URL } from '../api/lessonApi';
 import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
@@ -39,6 +39,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   const [isExporting, setIsExporting] = useState(false);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
+  const [exportedSrtUrl, setExportedSrtUrl] = useState<string | null>(null);
+  const [showVideoModal, setShowVideoModal] = useState(false);
   const [voiceStatuses, setVoiceStatuses] = useState<Record<string, string>>(() => {
     return (lesson as any).voices || { [lesson.language]: 'ready' };
   });
@@ -81,15 +84,41 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     }
   }, [currentScene?.type, sceneIndex, isPlaying, pause, isCapture]);
 
-  // MP4 Export & Download Handler
+  // Pre-load video URL if sample or already exported
+  useEffect(() => {
+    if ((lesson.id === 'sample' || !lesson.id || lesson.id.startsWith('sample')) && lesson.language === 'en') {
+      setExportedVideoUrl(`${API_BASE_URL}/audio/sample/lesson_sample_en.mp4`);
+      setExportedSrtUrl(`${API_BASE_URL}/audio/sample/captions_sample_en.srt`);
+    } else {
+      setExportedVideoUrl(null);
+      setExportedSrtUrl(null);
+    }
+  }, [lesson.id, lesson.language]);
+
+  // MP4 Export & On-Site Video Handler
   const handleExportMP4 = async () => {
+    if (exportedVideoUrl) {
+      setShowVideoModal(true);
+      return;
+    }
     if (isExporting) return;
     try {
       setIsExporting(true);
       setExportError(null);
       setExportMessage('Combining rendered 720p scenes, voice-over & captions with FFmpeg...');
       const res = await apiExportLesson(lesson.id || 'sample', lesson.language);
-      setExportMessage('Export complete! Starting video download...');
+      const fullVideoUrl = res.mp4_url.startsWith('http')
+        ? res.mp4_url
+        : `${API_BASE_URL}${res.mp4_url.startsWith('/') ? '' : '/'}${res.mp4_url}`;
+      setExportedVideoUrl(fullVideoUrl);
+      if (res.srt_url) {
+        const fullSrt = res.srt_url.startsWith('http')
+          ? res.srt_url
+          : `${API_BASE_URL}${res.srt_url.startsWith('/') ? '' : '/'}${res.srt_url}`;
+        setExportedSrtUrl(fullSrt);
+      }
+      setShowVideoModal(true);
+      setExportMessage('Video ready! Displaying directly on website...');
       const downloadPath = res.download_url || res.mp4_url;
       const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
       const filename = `${cleanTitle}_${lesson.language}.mp4`;
@@ -97,7 +126,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
       setTimeout(() => {
         setIsExporting(false);
         setExportMessage(null);
-      }, 4000);
+      }, 3500);
     } catch (err) {
       console.error('Export failed:', err);
       setExportError((err as Error).message);
@@ -278,7 +307,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               t={localT}
               duration={sceneDuration}
               mood={currentScene.mood || 'happy'}
-              anchor={getAnchor(currentScene.type)}
+              anchor={getAnchor(currentScene, localT, sceneDuration)}
             />
           )}
         </Stage>
@@ -781,56 +810,144 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                     {lesson.title} ({langInfo.name})
                   </div>
                   <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
-                    Your offline 720p HD MP4 video with complete voice-over and captions is ready for download.
+                    {exportedVideoUrl
+                      ? 'Your 720p HD MP4 video with complete voice-over & captions is ready to play and download.'
+                      : 'Generate a 720p HD MP4 video with complete voice-over and captions.'}
                   </div>
                 </div>
 
-                {/* Primary Download Button */}
-                <button
-                  id="btn-download-mp4-finish"
-                  onClick={handleExportMP4}
-                  disabled={isExporting}
-                  style={{
-                    width: '100%',
-                    background: isExporting
-                      ? 'rgba(168, 85, 247, 0.3)'
-                      : 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
-                    border: '1.5px solid #c084fc',
-                    borderRadius: '14px',
-                    padding: '16px 24px',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    color: '#ffffff',
-                    cursor: isExporting ? 'wait' : 'pointer',
-                    boxShadow: '0 8px 24px rgba(147, 51, 234, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '10px',
-                    transition: 'all 0.2s ease',
-                  }}
-                >
-                  {isExporting ? (
-                    <>
-                      <span
+                {/* Direct On-Site Video Player if available */}
+                {exportedVideoUrl ? (
+                  <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    <div
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        borderRadius: '16px',
+                        overflow: 'hidden',
+                        border: '2px solid rgba(168, 85, 247, 0.7)',
+                        boxShadow: '0 12px 35px rgba(0, 0, 0, 0.8), 0 0 25px rgba(168, 85, 247, 0.3)',
+                        background: '#000000',
+                      }}
+                    >
+                      <video
+                        id="celebration-exported-video"
+                        src={exportedVideoUrl}
+                        controls
+                        autoPlay
+                        playsInline
                         style={{
-                          width: '18px',
-                          height: '18px',
-                          border: '2px solid rgba(255, 255, 255, 0.3)',
-                          borderTopColor: '#ffffff',
-                          borderRadius: '50%',
-                          animation: 'spin 0.8s linear infinite',
+                          width: '100%',
+                          maxHeight: '300px',
+                          display: 'block',
+                          background: '#000000',
                         }}
                       />
-                      <span>Generating 720p MP4 Video...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span style={{ fontSize: '18px' }}>📥</span>
-                      <span>Download 720p MP4 Video</span>
-                    </>
-                  )}
-                </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                      <button
+                        id="btn-save-video-computer"
+                        onClick={() => {
+                          const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                          triggerFileDownload(exportedVideoUrl, `${cleanTitle}_${lesson.language}.mp4`);
+                        }}
+                        style={{
+                          flex: 1,
+                          background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+                          border: '1.5px solid #c084fc',
+                          borderRadius: '12px',
+                          padding: '12px 18px',
+                          color: '#ffffff',
+                          fontWeight: 700,
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '8px',
+                          boxShadow: '0 4px 15px rgba(147, 51, 234, 0.4)',
+                        }}
+                      >
+                        <span>💾</span>
+                        <span>Download MP4 File</span>
+                      </button>
+                      {exportedSrtUrl && (
+                        <button
+                          id="btn-download-srt-finish"
+                          onClick={() => {
+                            const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                            triggerFileDownload(exportedSrtUrl, `${cleanTitle}_${lesson.language}.srt`);
+                          }}
+                          style={{
+                            background: 'rgba(30, 41, 59, 0.85)',
+                            border: '1px solid rgba(71, 85, 105, 0.6)',
+                            borderRadius: '12px',
+                            padding: '12px 16px',
+                            color: '#cbd5e1',
+                            fontWeight: 600,
+                            fontSize: '13px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                          }}
+                          title="Download synchronized subtitles (.srt)"
+                        >
+                          <span>📝</span>
+                          <span>Subtitles (.SRT)</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  /* Primary Generate & Download Button */
+                  <button
+                    id="btn-download-mp4-finish"
+                    onClick={handleExportMP4}
+                    disabled={isExporting}
+                    style={{
+                      width: '100%',
+                      background: isExporting
+                        ? 'rgba(168, 85, 247, 0.3)'
+                        : 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+                      border: '1.5px solid #c084fc',
+                      borderRadius: '14px',
+                      padding: '16px 24px',
+                      fontSize: '16px',
+                      fontWeight: 700,
+                      color: '#ffffff',
+                      cursor: isExporting ? 'wait' : 'pointer',
+                      boxShadow: '0 8px 24px rgba(147, 51, 234, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '10px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    {isExporting ? (
+                      <>
+                        <span
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            border: '2px solid rgba(255, 255, 255, 0.3)',
+                            borderTopColor: '#ffffff',
+                            borderRadius: '50%',
+                            animation: 'spin 0.8s linear infinite',
+                          }}
+                        />
+                        <span>Generating 720p Video...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span style={{ fontSize: '18px' }}>🎬</span>
+                        <span>Generate & Watch 720p Video</span>
+                      </>
+                    )}
+                  </button>
+                )}
 
                 {exportMessage && (
                   <div style={{ fontSize: '12px', color: '#d8b4fe', fontStyle: 'italic' }}>
@@ -1026,6 +1143,186 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
 
       {/* Learner Preferences Modal */}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+
+      {/* On-Site 720p Video Player Modal */}
+      {showVideoModal && exportedVideoUrl && (
+        <div
+          id="video-player-modal"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(3, 7, 18, 0.92)',
+            backdropFilter: 'blur(14px)',
+            zIndex: 120,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '24px',
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowVideoModal(false);
+          }}
+        >
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(24, 18, 54, 0.99) 100%)',
+              border: '2px solid rgba(168, 85, 247, 0.7)',
+              borderRadius: '24px',
+              padding: '26px 30px',
+              maxWidth: '840px',
+              width: '100%',
+              boxShadow: '0 25px 70px rgba(0, 0, 0, 0.85), 0 0 50px rgba(168, 85, 247, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              position: 'relative',
+            }}
+          >
+            {/* Modal Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '24px' }}>🎬</span>
+                <div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: '#f8fafc', letterSpacing: '-0.01em' }}>
+                    {lesson.title}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#c084fc', fontWeight: 600, marginTop: '2px' }}>
+                    Playable 720p HD Video • Full Voice-Over & Captions ({langInfo.name})
+                  </div>
+                </div>
+              </div>
+              <button
+                id="btn-close-video-modal"
+                onClick={() => setShowVideoModal(false)}
+                style={{
+                  background: 'rgba(51, 65, 85, 0.6)',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: '34px',
+                  height: '34px',
+                  color: '#f8fafc',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title="Close Video"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Embedded HTML5 Video Player */}
+            <div
+              style={{
+                width: '100%',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                background: '#000000',
+                border: '1px solid rgba(168, 85, 247, 0.4)',
+                boxShadow: '0 12px 40px rgba(0, 0, 0, 0.9)',
+              }}
+            >
+              <video
+                id="modal-exported-video"
+                src={exportedVideoUrl}
+                controls
+                autoPlay
+                playsInline
+                style={{
+                  width: '100%',
+                  maxHeight: '440px',
+                  display: 'block',
+                  background: '#000000',
+                }}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  id="btn-modal-save-mp4"
+                  onClick={() => {
+                    const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                    triggerFileDownload(exportedVideoUrl, `${cleanTitle}_${lesson.language}.mp4`);
+                  }}
+                  style={{
+                    background: 'linear-gradient(135deg, #9333ea 0%, #7e22ce 100%)',
+                    border: '1.5px solid #c084fc',
+                    borderRadius: '10px',
+                    padding: '11px 22px',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 4px 16px rgba(147, 51, 234, 0.4)',
+                  }}
+                >
+                  <span>💾</span>
+                  <span>Save MP4 to Computer</span>
+                </button>
+                {exportedSrtUrl && (
+                  <button
+                    id="btn-modal-download-srt"
+                    onClick={() => {
+                      const cleanTitle = (lesson.title || 'lesson').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+                      triggerFileDownload(exportedSrtUrl, `${cleanTitle}_${lesson.language}.srt`);
+                    }}
+                    style={{
+                      background: 'rgba(30, 41, 59, 0.85)',
+                      border: '1px solid rgba(71, 85, 105, 0.6)',
+                      borderRadius: '10px',
+                      padding: '11px 18px',
+                      color: '#cbd5e1',
+                      fontWeight: 600,
+                      fontSize: '13px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                    title="Download synchronized subtitles (.srt)"
+                  >
+                    <span>📝</span>
+                    <span>Subtitles (.SRT)</span>
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => setShowVideoModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(71, 85, 105, 0.5)',
+                  borderRadius: '10px',
+                  padding: '10px 18px',
+                  color: '#94a3b8',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Back to Interactive Player
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

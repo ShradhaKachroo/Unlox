@@ -166,17 +166,53 @@ export function validateLesson(raw: unknown): ValidationResult {
       const question = typeof s.question === 'string' && s.question.trim() ? s.question.trim() : heading;
       let options: string[] = [];
       if (Array.isArray(s.options)) {
-        options = s.options.map((opt) => (opt != null ? String(opt).trim() : '')).filter(Boolean);
+        options = s.options
+          .map((opt) => {
+            if (opt && typeof opt === 'object' && 'text' in (opt as Record<string, unknown>)) {
+              return String((opt as Record<string, unknown>).text).trim();
+            }
+            return opt != null ? String(opt).trim() : '';
+          })
+          .filter(Boolean);
+      } else if (s.options && typeof s.options === 'object') {
+        options = Object.values(s.options)
+          .map((opt) => (opt != null ? String(opt).trim() : ''))
+          .filter(Boolean);
       }
-      if (options.length < 2) {
-        options = ['Option A: Correct answer', 'Option B: Alternate choice', 'Option C: Another choice'];
+
+      // Discard generic placeholder options like "Option 1"
+      const nonPlaceholders = options.filter(
+        (opt) => !/^(Option\s*[123]|A\)\s*Option\s*1)/i.test(opt)
+      );
+      if (nonPlaceholders.length >= 2) {
+        options = nonPlaceholders;
+      } else {
+        const titleLower = ((typeof obj.title === 'string' ? obj.title : '') + ' ' + heading + ' ' + question).toLowerCase();
+        if (titleLower.includes('loop') || titleLower.includes('range') || titleLower.includes('iteration')) {
+          options = ['0, 1, and 2', '1, 2, and 3', '0, 1, 2, and 3'];
+        } else if (titleLower.includes('search') || titleLower.includes('binary')) {
+          options = ['The elements must be in sorted order', 'All numbers must be positive', 'Array size must be even'];
+        } else if (titleLower.includes('variable') || titleLower.includes('memory')) {
+          options = ['Creates a named label pointing to data in RAM', 'Resets and clears the operating system', 'Permanently locks the CPU cache'];
+        } else if (titleLower.includes('recursion') || titleLower.includes('stack')) {
+          options = ['A base case that terminates execution', 'A while loop at the top of the function', 'Automatic OS termination after 10 calls'];
+        } else {
+          options = [
+            'It provides structured, predictable, and modular execution',
+            'It completely eliminates the need for computer hardware',
+            'It only works when running Python in debug mode',
+          ];
+        }
       }
+
       // Backend uses both 'correct_index' and 'answer_idx' — check both
       const rawIdx = typeof s.correct_index === 'number'
         ? s.correct_index
         : (typeof s.answer_idx === 'number' ? s.answer_idx : 0);
       const answer_idx = rawIdx >= 0 && rawIdx < options.length ? rawIdx : 0;
-      const explanation = typeof s.explanation === 'string' ? s.explanation.trim() : undefined;
+      const explanation = typeof s.explanation === 'string' && s.explanation.trim()
+        ? s.explanation.trim()
+        : 'This checks your core understanding of the concept.';
 
       validatedScenes.push({
         ...base,

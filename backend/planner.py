@@ -140,9 +140,9 @@ Rules:
 - "diagram": MUST have "items" array with 2–4 concrete step strings.
 - "quiz" (LAST scene only): {{
     "question": one clear conceptual question, max 120 chars,
-    "options": exactly 3–4 choices, max 60 chars each,
-    "correct_index": valid 0-based integer,
-    "explanation": 1 sentence why, max 150 chars,
+    "options": exactly 3–4 realistic, distinct choices (1 correct, 2–3 plausible distractors), 10–100 chars each. NEVER use generic placeholder text like 'Option 1',
+    "correct_index": valid 0-based integer matching the correct option,
+    "explanation": 1 concise sentence explaining why the correct answer is right, max 150 chars,
     "narration": reads the question aloud (same as question text)
   }}{prev_q_rule}
 - "narration": {narration_hint}
