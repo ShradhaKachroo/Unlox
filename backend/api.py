@@ -92,19 +92,33 @@ def generate(req: GenerateRequest):
     cache_key = f"{req.topic.strip().lower()}:{req.level}:{req.language}:{target_sec}:{req.local_context}"
 
     if cache_key in cache:
-        print(f"[generate] cache hit for topic '{req.topic}' [{req.language}]")
-        return cache[cache_key]
+        cached_entry = cache[cache_key]
+        cached_total = cached_entry.get("timing", {}).get("total_seconds", 0)
+        # Invalidate old short cache entries when 2-minute mode was requested
+        if target_sec >= 100 and cached_total < 85:
+            print(f"[generate] cached entry for '{req.topic}' too short ({cached_total}s < 85s for 2-min mode), regenerating fresh plan")
+        else:
+            print(f"[generate] cache hit for topic '{req.topic}' [{req.language}] ({cached_total}s)")
+            return cached_entry
 
     seconds = {}
 
     # Check if base English plan exists in cache to skip Ollama
     plan_key = f"plan:{req.topic.strip().lower()}:{req.level}:{target_sec}:{req.local_context}"
     if plan_key in cache:
-        print(f"[generate] plan cache hit for '{req.topic}'")
-        lesson = Lesson.model_validate(cache[plan_key])
-        source = "cached_plan"
-        seconds["plan"] = 0.0
+        cached_plan = cache[plan_key]
+        if target_sec >= 100 and len(cached_plan.get("scenes", [])) < 8:
+            print(f"[generate] cached plan for '{req.topic}' has too few scenes for 2-min mode, planning fresh")
+            lesson = None
+        else:
+            print(f"[generate] plan cache hit for '{req.topic}'")
+            lesson = Lesson.model_validate(cached_plan)
+            source = "cached_plan"
+            seconds["plan"] = 0.0
     else:
+        lesson = None
+
+    if lesson is None:
         t = time.time()
         lesson, source = plan_lesson(
             req.topic,
@@ -125,7 +139,7 @@ def generate(req: GenerateRequest):
         seconds["translate"] = round(time.time() - t, 1)
 
     t = time.time()
-    timing = build_timing(translated, req.language, voice=req.voice)
+    timing = build_timing(translated, req.language, voice=req.voice, target_seconds=target_sec)
     seconds["voice"] = round(time.time() - t, 1)
 
     # Automatically generate full WAV and SRT for export/captions
@@ -183,7 +197,8 @@ def revoice(req: RevoiceRequest):
         base_lesson = Lesson.model_validate(cached.get("lesson") or cached)
 
     translated = translate_lesson(base_lesson, req.lang)
-    timing = build_timing(translated, req.lang, voice=req.voice)
+    target_sec = int(round(cached.get("timing", {}).get("total_seconds", 0))) if cached else None
+    timing = build_timing(translated, req.lang, voice=req.voice, target_seconds=target_sec)
     try:
         export_audio_and_srt(req.lang)
     except Exception as e:

@@ -65,6 +65,20 @@ FALLBACK = {
             "narration": "Use a for loop when you know how many times to repeat, like looping over a list or a range. Use a while loop when you do not know in advance, like waiting for user input. Both types of loops save you from writing repetitive code. That is the power of loops in Python!",
             "mood": "excited",
         },
+        {
+            "type": "quiz",
+            "heading": "Loops Knowledge Check",
+            "question": "When should you prefer a for loop over a while loop in Python?",
+            "options": [
+                "A) When the number of iterations or items is known in advance",
+                "B) When waiting for an unknown user input condition",
+                "C) Only when working with floating point numbers",
+            ],
+            "answer_idx": 0,
+            "explanation": "For loops excel when iterating over fixed sequences or known ranges, while while loops handle conditional repetition.",
+            "narration": "Quick question to test your understanding! When is it best to choose a for loop instead of a while loop in Python?",
+            "mood": "excited",
+        },
     ],
 }
 

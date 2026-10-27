@@ -13,10 +13,14 @@ MAX_ATTEMPTS = 4
 def get_system_prompt(target_seconds: int = 45, local_context: bool = False):
     if target_seconds >= 100:
         num_scenes = "8 to 10"
-        narration_rule = "18 to 28 words per scene (1 to 2 punchy sentences) to keep rapid visual cuts throughout the 2-minute explainer."
+        narration_rule = (
+            "Detailed educational explanation: 30 to 45 words per scene (2 to 3 clear, complete sentences). "
+            "Explain what the code or diagram is demonstrating, why it works, and key mental takeaways. "
+            "Do NOT write short 1-sentence or 10-word summaries for 2-minute mode."
+        )
     else:
         num_scenes = "5 to 6"
-        narration_rule = "15 to 25 words per scene (1 to 2 clear sentences) for a quick 45-second animated explainer."
+        narration_rule = "18 to 25 words per scene (1 to 2 clear sentences) for a quick animated explainer."
 
     context_rule = (
         "\n- Anchor the concept using a relatable everyday Indian analogy (cricket, chai, or trains) in the introduction."
@@ -29,7 +33,7 @@ You must output a {num_scenes} scene lesson with rapid visual cuts and an intera
 
 Rules:
 - Exactly {num_scenes} scenes in total.
-- Scene 1: MUST be type "title_card" with an engaging heading and a 1-sentence hook narration.{context_rule}
+- Scene 1: MUST be type "title_card" with an engaging heading and an educational hook narration.{context_rule}
 - Middle scenes: alternate between "code_walkthrough" and "diagram" to teach step by step:
   * "code_walkthrough": Python code (max 8 lines) in "code", and 1-based "highlight_lines" (e.g. [1] or [2, 3]). Use double quotes for strings.
   * "diagram": MUST have "items" array with 2 to 4 concrete step strings (e.g. ["Step 1: Init", "Step 2: Loop", "Step 3: End"]).
@@ -50,7 +54,7 @@ JSON Schema format:
     {{
       "type": "title_card",
       "heading": "How Binary Search Works",
-      "narration": "Welcome! Today we will master binary search to find items in sorted data instantly.",
+      "narration": "Welcome! Today we will master binary search to locate items in sorted arrays with lightning speed. Instead of scanning linearly, we will cut our work in half each round.",
       "mood": "happy"
     }},
     {{
@@ -58,14 +62,14 @@ JSON Schema format:
       "heading": "Step 1: Sorted Array Setup",
       "code": "arr = [10, 20, 30, 40, 50]\\ntarget = 30",
       "highlight_lines": [1],
-      "narration": "First, we start with a sorted array and define the target value we want to find.",
+      "narration": "First, we start with our sorted array and define the target value we want to find. Having sorted data is the crucial prerequisite that makes binary search possible.",
       "mood": "curious"
     }},
     {{
       "type": "diagram",
       "heading": "Step 2: Divide and Conquer",
       "items": ["Find midpoint", "Compare with target", "Halve the search space"],
-      "narration": "We check the middle element. If it matches, we are done; otherwise, we eliminate half the list.",
+      "narration": "Next, we calculate the middle index and compare its element against our target. If they match, we succeed immediately. Otherwise, we discard whichever half cannot contain the value.",
       "mood": "thinking"
     }},
     {{
@@ -75,7 +79,7 @@ JSON Schema format:
       "options": ["A) It must be sorted", "B) It must contain only integers", "C) It must have an even length"],
       "answer_idx": 0,
       "explanation": "Binary search requires sorted elements so we can reliably eliminate half the array each step.",
-      "narration": "Quick question! What must be true about the array before we can perform a binary search?",
+      "narration": "Now for a quick knowledge check! What strict condition must any array satisfy before we can execute a binary search on it?",
       "mood": "excited"
     }}
   ]
@@ -89,7 +93,17 @@ def plan_lesson(topic: str, level: str = "beginner", local_context: bool = False
     Returns (lesson, source). source is 'llm' or 'fallback'.
     """
     system_prompt = get_system_prompt(target_seconds, local_context)
-    user_prompt = f"Create an engaging visual lesson for topic: '{topic}'. Level: {level}. Target length: {target_seconds} seconds."
+    if target_seconds >= 100:
+        user_prompt = (
+            f"Create an in-depth 2-minute visual lesson with 8 to 10 scenes for topic: '{topic}'. Level: {level}. "
+            f"Crucial rule: Write 30 to 45 words of clear educational narration per scene (2 to 3 sentences each) "
+            f"to teach the concepts thoroughly across the 2-minute explainer. End with an interactive quiz scene."
+        )
+    else:
+        user_prompt = (
+            f"Create a fast visual explainer with 5 to 6 scenes for topic: '{topic}'. Level: {level}. "
+            f"Target length: {target_seconds} seconds. End with an interactive quiz scene."
+        )
 
     messages = [
         {"role": "system", "content": system_prompt},

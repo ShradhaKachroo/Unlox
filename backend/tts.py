@@ -67,26 +67,55 @@ def make_audio(text, path, language="en", voice_gender="female"):
     return len(samples) / sr
 
 
-def build_timing(lesson, language="en", voice="female", out_dir="out"):
-    """Audio first: each scene lasts as long as its voice plus a pause."""
+def build_timing(lesson, language="en", voice="female", target_seconds: int = None, out_dir="out"):
+    """Audio first with smart duration pacing to match requested lesson target_seconds.
+    Guarantees every scene has ample time for voice narration, visual absorption,
+    and interactive quiz solving.
+    """
     out_path = os.path.join(HERE, out_dir)
     os.makedirs(out_path, exist_ok=True)
 
-    scenes = []
-    t = 0.0
+    raw_scenes = []
     for i, scene in enumerate(lesson.scenes):
         wav = os.path.join(out_path, f"scene_{i}_{language}.wav")
         seconds = make_audio(scene.narration, wav, language=language, voice_gender=voice)
-        duration = seconds + PAUSE
-        scenes.append({
+        raw_scenes.append({
             "scene": i,
             "audio": f"scene_{i}_{language}.wav",
             "audio_seconds": round(seconds, 2),
-            "start": round(t, 2),
-            "duration": round(duration, 2),
             "caption": scene.narration,
+            "type": getattr(scene, "type", ""),
         })
-        t += duration
+
+    n = len(raw_scenes)
+    # Every scene requires at least audio_seconds + 0.8s buffer
+    min_durations = [s["audio_seconds"] + 0.8 for s in raw_scenes]
+    if raw_scenes and raw_scenes[-1]["type"] == "quiz" and (target_seconds or 0) >= 100:
+        min_durations[-1] = max(min_durations[-1], 16.0)
+
+    total_min = sum(min_durations)
+
+    durations = list(min_durations)
+    if target_seconds and target_seconds > total_min and n > 0:
+        extra = float(target_seconds - total_min)
+        # Distribute remaining extra time across all scenes for visual comprehension
+        per_scene = extra / n
+        for i in range(n):
+            durations[i] += per_scene
+
+    scenes = []
+    t = 0.0
+    for i, s in enumerate(raw_scenes):
+        dur = round(durations[i], 2)
+        scenes.append({
+            "scene": s["scene"],
+            "audio": s["audio"],
+            "audio_seconds": s["audio_seconds"],
+            "start": round(t, 2),
+            "duration": dur,
+            "caption": s["caption"],
+        })
+        t += dur
 
     timing = {"language": language, "voice": voice, "total_seconds": round(t, 2), "scenes": scenes}
     with open(os.path.join(out_path, f"timing_{language}.json"), "w", encoding="utf-8") as f:
