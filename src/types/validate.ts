@@ -162,8 +162,30 @@ export function validateLesson(raw: unknown): ValidationResult {
         items,
         arrows,
       });
+    } else if (type === 'quiz') {
+      const question = typeof s.question === 'string' && s.question.trim() ? s.question.trim() : heading;
+      let options: string[] = [];
+      if (Array.isArray(s.options)) {
+        options = s.options.map((opt) => (opt != null ? String(opt).trim() : '')).filter(Boolean);
+      }
+      if (options.length < 2) {
+        options = ['Option A: Correct answer', 'Option B: Alternate choice', 'Option C: Another choice'];
+      }
+      const answer_idx = typeof s.answer_idx === 'number' && s.answer_idx >= 0 && s.answer_idx < options.length
+        ? s.answer_idx
+        : 0;
+      const explanation = typeof s.explanation === 'string' ? s.explanation.trim() : undefined;
+
+      validatedScenes.push({
+        ...base,
+        type: 'quiz',
+        question,
+        options,
+        answer_idx,
+        explanation,
+      });
     } else {
-      // Fallback for unknown or new scene types before implementation
+      // Fallback for unknown scene types
       validatedScenes.push({
         ...base,
         type: 'title_card',

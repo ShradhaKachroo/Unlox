@@ -38,7 +38,15 @@ export interface CodeWalkthroughScene extends BaseScene {
   trace?: Array<{ line: number; vars: Record<string, string | number> }>;
 }
 
-export type Scene = TitleCardScene | DiagramScene | CodeWalkthroughScene;
+export interface QuizScene extends BaseScene {
+  type: 'quiz';
+  question?: string;
+  options?: string[];
+  answer_idx?: number;
+  explanation?: string;
+}
+
+export type Scene = TitleCardScene | DiagramScene | CodeWalkthroughScene | QuizScene;
 
 export interface Lesson {
   id: string;

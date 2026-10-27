@@ -3,6 +3,7 @@ import type { Scene } from '../types/lesson';
 import { TitleCard } from '../scenes/TitleCard';
 import { CodeWalkthrough } from '../scenes/CodeWalkthrough';
 import { Diagram } from '../scenes/Diagram';
+import { QuizScene } from '../scenes/QuizScene';
 
 interface SceneRendererProps {
   scene: Scene;
@@ -19,6 +20,8 @@ export const SceneRenderer: React.FC<SceneRendererProps> = ({ scene, t, duration
       return <CodeWalkthrough scene={scene} t={t} duration={duration} quality={quality} />;
     case 'diagram':
       return <Diagram scene={scene} t={t} duration={duration} quality={quality} />;
+    case 'quiz':
+      return <QuizScene scene={scene} t={t} duration={duration} quality={quality} />;
     default:
       return (
         <div

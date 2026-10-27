@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
-SceneType = Literal["title_card", "diagram", "code_walkthrough"]
+SceneType = Literal["title_card", "diagram", "code_walkthrough", "quiz"]
 MoodType = Literal["happy", "thinking", "excited", "curious"]
 
 
@@ -15,6 +15,10 @@ class Scene(BaseModel):
     code: Optional[str] = None
     highlight_lines: Optional[list[int]] = None
     items: Optional[list] = None
+    question: Optional[str] = None
+    options: Optional[list] = None
+    answer_idx: Optional[int] = 0
+    explanation: Optional[str] = None
     mood: Optional[MoodType] = "happy"
     duration_ms: Optional[int] = None
     audio_url: Optional[str] = None
@@ -24,6 +28,16 @@ class Scene(BaseModel):
     @classmethod
     def coerce_items(cls, v):
         """LLM sometimes returns items as a plain string or comma-separated list."""
+        if isinstance(v, str):
+            parts = [p.strip() for p in v.split(",") if p.strip()]
+            if len(parts) < 2:
+                parts = v.split()
+            return parts
+        return v
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def coerce_options(cls, v):
         if isinstance(v, str):
             parts = [p.strip() for p in v.split(",") if p.strip()]
             if len(parts) < 2:
@@ -53,7 +67,7 @@ class Scene(BaseModel):
             else:
                 self.highlight_lines = [1]
 
-        if self.type == "diagram":
+        elif self.type == "diagram":
             if not self.items:
                 self.items = ["Step 1", "Step 2", "Done"]
             if len(self.items) > 5:
@@ -61,6 +75,16 @@ class Scene(BaseModel):
             while len(self.items) < 2:
                 self.items.append("Complete")
             self.items = [str(i)[:40] for i in self.items]
+
+        elif self.type == "quiz":
+            if not self.question:
+                self.question = self.heading
+            if not self.options or len(self.options) < 2:
+                self.options = ["A) It works iteratively", "B) It stops immediately", "C) It uses recursion"]
+            if self.answer_idx is None or not (0 <= self.answer_idx < len(self.options)):
+                self.answer_idx = 0
+            if not self.explanation:
+                self.explanation = "Great job! This tests your understanding of the core concept."
 
         return self
 
@@ -70,7 +94,7 @@ class Lesson(BaseModel):
     title: str = Field(min_length=1, max_length=100)
     level: Literal["beginner", "intermediate"] = "beginner"
     language: str = "en"
-    scenes: list[Scene] = Field(min_length=2, max_length=10)
+    scenes: list[Scene] = Field(min_length=2, max_length=15)
 
     @model_validator(mode="after")
     def check_lesson(self):

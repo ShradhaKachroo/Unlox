@@ -3,13 +3,17 @@ import type { Lesson } from './types/lesson';
 import { fetchLessonWithTiming } from './utils/loader';
 import { PlayerShell } from './player/PlayerShell';
 import { InputPage } from './pages/InputPage';
+import { LibraryPage } from './pages/LibraryPage';
+import { StudyPlanPage } from './pages/StudyPlanPage';
 
 export const App: React.FC = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
-  const [view, setView] = useState<'player' | 'input'>(() => {
+  const [view, setView] = useState<'player' | 'input' | 'library' | 'study_plan'>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
       if (p.get('view') === 'player' || p.get('capture') === '1') return 'player';
+      if (p.get('view') === 'library') return 'library';
+      if (p.get('view') === 'study') return 'study_plan';
     }
     return 'input';
   });
@@ -22,6 +26,10 @@ export const App: React.FC = () => {
     return false;
   });
   const [error, setError] = useState<string | null>(null);
+
+  // Topic & duration passed from Study Plan into Input Page
+  const [selectedTopic, setSelectedTopic] = useState('');
+  const [selectedDuration, setSelectedDuration] = useState(45);
 
   // Initialize with sample lesson only if player/capture is explicitly requested
   useEffect(() => {
@@ -56,6 +64,12 @@ export const App: React.FC = () => {
     setCurrentLesson(lesson);
     setStatusBadge(badge);
     setView('player');
+  };
+
+  const handleSelectFromStudyPlan = (topic: string, duration: number) => {
+    setSelectedTopic(topic);
+    setSelectedDuration(duration);
+    setView('input');
   };
 
   if (loading) {
@@ -126,8 +140,38 @@ export const App: React.FC = () => {
     );
   }
 
+  if (view === 'library') {
+    return (
+      <LibraryPage
+        onWatchLesson={(lesson) => {
+          setCurrentLesson(lesson);
+          setStatusBadge('Saved Lesson');
+          setView('player');
+        }}
+        onBack={() => setView('input')}
+      />
+    );
+  }
+
+  if (view === 'study_plan') {
+    return (
+      <StudyPlanPage
+        onSelectTopic={handleSelectFromStudyPlan}
+        onBack={() => setView('input')}
+      />
+    );
+  }
+
   if (view === 'input' || !currentLesson) {
-    return <InputPage onLessonReady={handleLessonReady} />;
+    return (
+      <InputPage
+        onLessonReady={handleLessonReady}
+        onOpenLibrary={() => setView('library')}
+        onOpenStudyPlan={() => setView('study_plan')}
+        initialTopic={selectedTopic}
+        initialDuration={selectedDuration}
+      />
+    );
   }
 
   return (

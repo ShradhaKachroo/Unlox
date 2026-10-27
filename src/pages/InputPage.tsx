@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Lesson, Level } from '../types/lesson';
 import { LANGUAGE_LABELS } from '../utils/fonts';
 import { fetchLessonWithTiming } from '../utils/loader';
 import { useSettings } from '../context/useSettings';
 import { apiGenerateLesson } from '../api/lessonApi';
+import { GeneratingLoader } from '../components/GeneratingLoader';
+import { saveToLibrary } from '../utils/library';
 
 interface InputPageProps {
   onLessonReady: (lesson: Lesson, sourceBadge: string) => void;
+  onOpenLibrary?: () => void;
+  onOpenStudyPlan?: () => void;
+  initialTopic?: string;
+  initialDuration?: number;
 }
 
 const PRESET_TOPICS = [
@@ -16,15 +22,26 @@ const PRESET_TOPICS = [
   'Recursion and Call Stacks',
 ];
 
-export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
+export const InputPage: React.FC<InputPageProps> = ({
+  onLessonReady,
+  onOpenLibrary,
+  onOpenStudyPlan,
+  initialTopic = '',
+  initialDuration = 45,
+}) => {
   const { settings } = useSettings();
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState(initialTopic);
   const [level, setLevel] = useState<Level>('beginner');
   const [language, setLanguage] = useState('en');
-  const [targetLength, setTargetLength] = useState(45);
+  const [targetLength, setTargetLength] = useState(initialDuration);
   const [localContext, setLocalContext] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialTopic) setTopic(initialTopic);
+    if (initialDuration) setTargetLength(initialDuration);
+  }, [initialTopic, initialDuration]);
 
   const fetchSampleLesson = async (langCode: string): Promise<Lesson> => {
     return await fetchLessonWithTiming(langCode);
@@ -35,7 +52,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
     if (!topic.trim()) return;
 
     setLoading(true);
-    setStatusMessage('Generating lesson with local AI and synthesizing voice (typically 25-45s)...');
+    setErrorMessage(null);
 
     try {
       const generatedLesson = await apiGenerateLesson({
@@ -46,26 +63,34 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
         voice: settings.voice,
         local_context: localContext,
       });
+
+      // Automatically archive into topic library
+      saveToLibrary(generatedLesson, targetLength);
+
       onLessonReady(generatedLesson, 'Generated Lesson');
-      return;
     } catch (err) {
       console.error('Generation failed:', err);
-      setStatusMessage(`Generation failed: ${(err as Error).message}. You can try again or check backend logs.`);
+      setErrorMessage(`Generation failed: ${(err as Error).message}. You can retry or check local server.`);
       setLoading(false);
     }
   };
 
   const handleDirectSample = async (sampleLang: string) => {
     setLoading(true);
-    setStatusMessage(`Loading ${sampleLang.toUpperCase()} lesson...`);
+    setErrorMessage(null);
     try {
       const lesson = await fetchSampleLesson(sampleLang);
       onLessonReady(lesson, `Sample (${sampleLang.toUpperCase()})`);
     } catch (err) {
-      setStatusMessage(`Failed to load sample: ${(err as Error).message}`);
+      setErrorMessage(`Failed to load sample: ${(err as Error).message}`);
       setLoading(false);
     }
   };
+
+  // If generating, show the interactive GeneratingLoader with jokes and trivia
+  if (loading) {
+    return <GeneratingLoader topic={topic || 'Visual Lesson'} targetSeconds={targetLength} />;
+  }
 
   return (
     <div
@@ -83,32 +108,87 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
         fontFamily: '"Noto Sans", sans-serif',
       }}
     >
-      {/* Brand Header */}
-      <div style={{ textAlign: 'center', marginBottom: '32px', maxWidth: '640px' }}>
+      {/* Top Action Bar */}
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '620px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '24px',
+        }}
+      >
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {onOpenStudyPlan && (
+            <button
+              type="button"
+              onClick={onOpenStudyPlan}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: 'rgba(99, 102, 241, 0.18)',
+                border: '1px solid rgba(129, 140, 248, 0.4)',
+                color: '#a5b4fc',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>🗺️</span> Study Plan
+            </button>
+          )}
+
+          {onOpenLibrary && (
+            <button
+              type="button"
+              onClick={onOpenLibrary}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '10px',
+                background: 'rgba(56, 189, 248, 0.15)',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
+                color: '#38bdf8',
+                fontSize: '13px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              <span>📚</span> Video Library
+            </button>
+          )}
+        </div>
+
         <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '6px 16px',
+            gap: '6px',
+            padding: '5px 12px',
             borderRadius: '9999px',
-            background: 'rgba(56, 189, 248, 0.12)',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
-            color: '#38bdf8',
-            fontSize: '13px',
+            background: 'rgba(34, 197, 94, 0.12)',
+            border: '1px solid rgba(34, 197, 94, 0.3)',
+            color: '#4ade80',
+            fontSize: '12px',
             fontWeight: 700,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            marginBottom: '14px',
           }}
         >
-          <span style={{ fontSize: '15px' }}>⚡</span> Offline Visual Teacher
+          <span>●</span> 100% Offline Engine
         </div>
+      </div>
 
+      {/* Brand Header */}
+      <div style={{ textAlign: 'center', marginBottom: '28px', maxWidth: '640px' }}>
         <h1
           style={{
-            margin: '0 0 10px 0',
-            fontSize: '40px',
+            margin: '0 0 8px 0',
+            fontSize: '38px',
             fontWeight: 800,
             letterSpacing: '-0.025em',
             background: 'linear-gradient(135deg, #ffffff 30%, #93c5fd 100%)',
@@ -119,9 +199,8 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
           Blu Visual Teacher
         </h1>
 
-        <p style={{ margin: 0, fontSize: '16px', color: '#94a3b8', lineHeight: 1.5 }}>
-          Transform coding and conceptual lessons into animated, narrated visual walkthroughs.
-          100% offline-ready with regional Indian typography.
+        <p style={{ margin: 0, fontSize: '15px', color: '#94a3b8', lineHeight: 1.5 }}>
+          Turn any coding concept into an animated visual lesson with step-by-step cuts and MCQ quiz.
         </p>
       </div>
 
@@ -130,16 +209,16 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
         style={{
           width: '100%',
           maxWidth: '580px',
-          background: 'rgba(15, 23, 42, 0.8)',
+          background: 'rgba(15, 23, 42, 0.85)',
           border: '1px solid rgba(56, 189, 248, 0.25)',
           borderRadius: '20px',
-          padding: '32px',
+          padding: '30px',
           boxSizing: 'border-box',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 35px rgba(56, 189, 248, 0.1)',
           backdropFilter: 'blur(16px)',
         }}
       >
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* Topic Input */}
           <div>
             <label
@@ -159,7 +238,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
               type="text"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              placeholder="e.g. Python For Loops, Binary Search"
+              placeholder="e.g. Binary Search in Arrays, Recursion, Python Dictionaries..."
               style={{
                 width: '100%',
                 padding: '12px 16px',
@@ -246,7 +325,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                   marginBottom: '8px',
                 }}
               >
-                Narration Language
+                Voice Language
               </label>
               <select
                 id="language-select"
@@ -264,16 +343,16 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                   outline: 'none',
                 }}
               >
-                {Object.entries(LANGUAGE_LABELS).map(([code, item]) => (
+                {Object.entries(LANGUAGE_LABELS).map(([code, label]) => (
                   <option key={code} value={code}>
-                    {item.name} ({item.nativeName})
+                    {label.name} ({label.nativeName})
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          {/* Target Length Slider */}
+          {/* Target Length Slider & 2-Minute Mode */}
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <label
@@ -284,7 +363,7 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                   color: '#e2e8f0',
                 }}
               >
-                Target Length
+                Video Duration & Visual Rhythm
               </label>
               <span
                 style={{
@@ -294,15 +373,16 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                   fontWeight: 700,
                 }}
               >
-                {targetLength} seconds
+                {targetLength} seconds {targetLength >= 100 ? '(2 min deep dive)' : '(rapid cuts)'}
               </span>
             </div>
+
             <input
               id="length-slider"
               type="range"
               min={30}
-              max={90}
-              step={5}
+              max={120}
+              step={15}
               value={targetLength}
               onChange={(e) => setTargetLength(Number(e.target.value))}
               style={{
@@ -311,22 +391,37 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                 cursor: 'pointer',
               }}
             />
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                color: '#64748b',
-                fontSize: '12px',
-                marginTop: '4px',
-              }}
-            >
-              <span>30s (Quick Overview)</span>
-              <span>60s (Standard)</span>
-              <span>90s (In-depth)</span>
+
+            {/* Duration Presets */}
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+              {[
+                { sec: 45, label: '⚡ 45s (5 Cuts)' },
+                { sec: 60, label: '⏱️ 60s (6 Cuts)' },
+                { sec: 120, label: '🎬 2 Min (8-10 Cuts + MCQ)' },
+              ].map(({ sec, label }) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => setTargetLength(sec)}
+                  style={{
+                    flex: 1,
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    background: targetLength === sec ? 'rgba(56, 189, 248, 0.25)' : 'rgba(30, 41, 59, 0.6)',
+                    border: targetLength === sec ? '1px solid #38bdf8' : '1px solid #334155',
+                    color: targetLength === sec ? '#38bdf8' : '#94a3b8',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Local Context Examples Toggle */}
+          {/* Local Context Toggle */}
           <div
             style={{
               display: 'flex',
@@ -360,31 +455,31 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
                 flexDirection: 'column',
               }}
             >
-              <span style={{ fontWeight: 600 }}>Use local examples (cricket, chai, trains)</span>
+              <span style={{ fontWeight: 600 }}>Use relatable Indian examples (cricket, chai, trains)</span>
               <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-                Grounds abstract programming logic in relatable cultural contexts
+                Grounds abstract programming concepts in familiar cultural contexts
               </span>
             </label>
           </div>
 
-          {/* Status Message */}
-          {statusMessage && (
+          {/* Error Message */}
+          {errorMessage && (
             <div
               style={{
                 padding: '10px 14px',
                 borderRadius: '8px',
-                background: 'rgba(2, 132, 199, 0.15)',
-                border: '1px solid rgba(2, 132, 199, 0.3)',
-                color: '#38bdf8',
+                background: 'rgba(239, 68, 68, 0.15)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#f87171',
                 fontSize: '13px',
                 textAlign: 'center',
               }}
             >
-              {statusMessage}
+              {errorMessage}
             </div>
           )}
 
-          {/* Submit Button */}
+          {/* Generate Button */}
           <button
             id="btn-generate"
             type="submit"
@@ -392,14 +487,12 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
             style={{
               padding: '14px 24px',
               borderRadius: '12px',
-              background: loading
-                ? '#1e293b'
-                : 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+              background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
               border: '1px solid #38bdf8',
               color: '#ffffff',
               fontSize: '16px',
               fontWeight: 700,
-              cursor: loading ? 'not-allowed' : 'pointer',
+              cursor: 'pointer',
               boxShadow: '0 0 25px rgba(2, 132, 199, 0.4)',
               display: 'flex',
               alignItems: 'center',
@@ -407,19 +500,13 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
               gap: '10px',
             }}
           >
-            {loading ? (
-              <span>Preparing Lesson...</span>
-            ) : (
-              <>
-                <span>Generate Animated Lesson</span>
-                <span>✨</span>
-              </>
-            )}
+            <span>Generate Animated Lesson</span>
+            <span>✨</span>
           </button>
         </form>
 
-        {/* Instant Offline Quick Launch Presets */}
-        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #1e293b' }}>
+        {/* Offline Quick Launch Presets */}
+        <div style={{ marginTop: '24px', paddingTop: '18px', borderTop: '1px solid #1e293b' }}>
           <div
             style={{
               fontSize: '12px',
