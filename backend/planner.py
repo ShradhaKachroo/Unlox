@@ -7,54 +7,65 @@ from fallback import get_fallback_lesson
 from schema import Lesson, parse_lesson
 
 MODEL = "phi3.5"
-MAX_ATTEMPTS = 6
+MAX_ATTEMPTS = 4
 
-def get_system_prompt(target_seconds=60, local_context=False):
-    if target_seconds >= 120:
-        num_scenes = "8 to 10"
-    elif target_seconds >= 90:
-        num_scenes = "6 to 7"
-    else:
-        num_scenes = "4 to 5"
-    narration_guidance = (
-        "4 to 5 clear, engaging sentences (50 to 70 words per scene) to teach thoroughly at a comfortable speaking pace. "
-        "Each scene should explain one concept in detail with examples."
-        if target_seconds >= 120
-        else (
-            "3 to 4 clear, engaging sentences (35 to 55 words per scene) to teach thoroughly at a comfortable speaking pace."
-            if target_seconds >= 90
-            else "2 to 3 sentences in plain English for a beginner."
-        )
-    )
-    context_guidance = (
-        "\n- Include one relatable local real-world analogy scene (e.g., cricket over with 6 balls, making chai steps, or train tickets) to anchor the programming concept."
-        if local_context
-        else ""
-    )
+SYSTEM_PROMPT = """You write structured coding explainer lessons as JSON for an animated video engine.
+You must output a 4 to 6 scene lesson that teaches the topic step-by-step with rapid visual cuts.
 
-    return f"""You write structured coding and conceptual lessons as JSON for a video engine.
 Rules:
-- {num_scenes} scenes in total. Scene 1 must be a title_card.
-- Followed by alternating code_walkthrough and diagram scenes that teach step by step.
-- code_walkthrough: real, correct Python code in 'code' (max 10 lines) and 'highlight_lines' (1‑based line numbers that exist). Never repeat identical code in two scenes.
-- diagram: 2 to 4 items, each max 5 words, showing the concrete steps in order. Concrete values or steps, not vague words.
-- narration: {narration_guidance}
-- mood: set 'mood' on each scene to one of: 'happy', 'thinking', 'excited', 'curious'.{context_guidance}
-- Teach one idea at a time and build step by step.
+- 4 to 6 scenes total.
+- Scene 1: MUST be type "title_card" with an engaging heading and a 1-sentence hook narration.
+- Followed by alternating "code_walkthrough" and "diagram" scenes:
+  * "code_walkthrough": Python code (max 8 lines) in "code", and 1-based "highlight_lines" (e.g. [1] or [2, 3]). Always use double quotes for strings.
+  * "diagram": MUST have "items" array with 2 to 4 concrete step strings (e.g. ["Initialize i=0", "Check i < 3", "Print value"]).
+- "narration": 1 to 2 clear, punchy sentences per scene (20 to 35 words). Keep it engaging at a natural speaking pace.
+- "mood": one of "happy", "thinking", "excited", "curious" for each scene.
+
+Format must match this JSON structure:
+{
+  "title": "Topic Title",
+  "level": "beginner",
+  "language": "en",
+  "scenes": [
+    {
+      "type": "title_card",
+      "heading": "Big Question or Title",
+      "narration": "Welcome! Today we will learn...",
+      "mood": "happy"
+    },
+    {
+      "type": "code_walkthrough",
+      "heading": "Step 1: Setup",
+      "code": "numbers = [1, 2, 3]\\nfor n in numbers:\\n    print(n)",
+      "highlight_lines": [1],
+      "narration": "First, we create our list and prepare to loop.",
+      "mood": "curious"
+    },
+    {
+      "type": "diagram",
+      "heading": "Step 2: How It Executes",
+      "items": ["Read 1 -> Print 1", "Read 2 -> Print 2", "Read 3 -> Print 3"],
+      "narration": "Notice how each element moves through one by one.",
+      "mood": "thinking"
+    }
+  ]
+}
 """
 
 
-def plan_lesson(topic, level="beginner", local_context=False, target_seconds=60):
-    """Returns (lesson, source). source is 'llm' or 'fallback'."""
-    system_prompt = get_system_prompt(target_seconds, local_context)
-    user_prompt = f"Topic: {topic}. Level: {level}. Target length: {target_seconds} seconds."
+def plan_lesson(topic: str, level: str = "beginner", local_context: bool = False, target_seconds: int = 45):
+    """Generates a 4-6 scene lesson with rapid visual cuts and clear narration.
+    Returns (lesson, source). source is 'llm' or 'fallback'.
+    """
+    user_prompt = f"Create an engaging visual lesson for topic: '{topic}'. Level: {level}. Target length: {target_seconds} seconds (4 to 6 punchy scenes)."
     if local_context:
-        user_prompt += " Ground the explanation using relatable everyday Indian examples (like cricket, chai, or trains)."
+        user_prompt += " Use a relatable everyday Indian analogy (like cricket, chai, or trains) to introduce the concept."
 
     messages = [
-        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ]
+
     for attempt in range(1, MAX_ATTEMPTS + 1):
         start = time.time()
         try:
@@ -62,11 +73,11 @@ def plan_lesson(topic, level="beginner", local_context=False, target_seconds=60)
                 model=MODEL,
                 messages=messages,
                 format=Lesson.model_json_schema(),
-                options={"temperature": 0.3},
+                options={"temperature": 0.2},
             )
             lesson = parse_lesson(r.message.content)
             lesson.level = level
-            print(f"[planner] attempt {attempt} accepted in {time.time() - start:.1f}s")
+            print(f"[planner] attempt {attempt} accepted in {time.time() - start:.1f}s ({len(lesson.scenes)} scenes)")
             return lesson, "llm"
         except ValidationError as e:
             msg = e.errors()[0]["msg"]
@@ -74,13 +85,11 @@ def plan_lesson(topic, level="beginner", local_context=False, target_seconds=60)
             messages.append({"role": "assistant", "content": r.message.content})
             messages.append({
                 "role": "user",
-                "content": f"That was rejected: {msg}. Fix it and return the full lesson again. "
-                           "Keep code to 10 lines or fewer, highlight_lines must reference lines that exist "
-                           "in the code, and each diagram needs 2 to 4 items of max 5 words each.",
+                "content": f"Fix schema error: {msg}. Return valid JSON with 4 to 6 scenes. Diagrams must have 'items' array with 2-4 strings.",
             })
         except Exception as e:
             print(f"[planner] attempt {attempt} failed: {e}")
-            break  # Ollama itself is down, so retrying will not help
+            break
 
-    print("[planner] using fallback lesson")
+    print("[planner] using fallback verified lesson")
     return get_fallback_lesson(), "fallback"

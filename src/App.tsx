@@ -9,27 +9,29 @@ export const App: React.FC = () => {
   const [view, setView] = useState<'player' | 'input'>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
-      if (p.get('view') === 'input') return 'input';
+      if (p.get('view') === 'player' || p.get('capture') === '1') return 'player';
     }
-    return 'player';
+    return 'input';
   });
   const [statusBadge, setStatusBadge] = useState<string>('Offline Sample');
   const [loading, setLoading] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       const p = new URLSearchParams(window.location.search);
-      if (p.get('view') === 'input') return false;
+      if (p.get('view') === 'player' || p.get('capture') === '1') return true;
     }
-    return true;
+    return false;
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize with sample lesson so player and window.renderAt are available immediately
+  // Initialize with sample lesson only if player/capture is explicitly requested
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const requestedView = params.get('view');
+    const isCapture = params.get('capture') === '1';
     const lang = params.get('lang') || 'en';
 
-    if (requestedView === 'input') {
+    if (requestedView !== 'player' && !isCapture) {
+      setLoading(false);
       return;
     }
 

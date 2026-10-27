@@ -18,7 +18,7 @@ const PRESET_TOPICS = [
 
 export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
   const { settings } = useSettings();
-  const [topic, setTopic] = useState('Python For Loops');
+  const [topic, setTopic] = useState('');
   const [level, setLevel] = useState<Level>('beginner');
   const [language, setLanguage] = useState('en');
   const [targetLength, setTargetLength] = useState(45);

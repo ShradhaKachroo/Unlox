@@ -113,11 +113,16 @@ def generate(req: GenerateRequest):
             target_seconds=target_sec,
         )
         seconds["plan"] = round(time.time() - t, 1)
-        cache[plan_key] = lesson.model_dump()
+        if source != "fallback":
+            cache[plan_key] = lesson.model_dump()
 
     t = time.time()
-    translated = translate_lesson(lesson, req.language)
-    seconds["translate"] = round(time.time() - t, 1)
+    if req.language == "en":
+        translated = lesson
+        seconds["translate"] = 0.0
+    else:
+        translated = translate_lesson(lesson, req.language)
+        seconds["translate"] = round(time.time() - t, 1)
 
     t = time.time()
     timing = build_timing(translated, req.language)
@@ -157,9 +162,10 @@ def generate(req: GenerateRequest):
         "stage_seconds": seconds,
     }
 
-    cache[cache_key] = response
-    cache[lesson_id] = response
-    _persist_cache()
+    if source != "fallback":
+        cache[cache_key] = response
+        cache[lesson_id] = response
+        _persist_cache()
 
     return response
 
