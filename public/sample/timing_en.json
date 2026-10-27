@@ -1,6 +1,6 @@
 {
   "language": "en",
-  "total_seconds": 12.74,
+  "total_seconds": 17.75,
   "scenes": [
     {
       "scene": 0,
@@ -25,6 +25,14 @@
       "start": 8.82,
       "duration": 3.93,
       "caption": "Each pass takes the next value, then runs print i."
+    },
+    {
+      "scene": 3,
+      "audio": null,
+      "audio_seconds": 4.5,
+      "start": 12.75,
+      "duration": 5.0,
+      "caption": "Think of a loop like a cricket over with 6 balls: for ball in range(6), bowl each ball."
     }
   ]
 }

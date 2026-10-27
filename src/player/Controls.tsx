@@ -3,6 +3,8 @@ import React from 'react';
 interface ControlsProps {
   isPlaying: boolean;
   isMuted?: boolean;
+  currentLanguage?: string;
+  isRevoicing?: boolean;
   onPlay: () => void;
   onPause: () => void;
   onTogglePlay: () => void;
@@ -10,16 +12,32 @@ interface ControlsProps {
   onPrev: () => void;
   onReplay: () => void;
   onToggleMute?: () => void;
+  onOpenSettings?: () => void;
+  onLanguageChange?: (lang: string) => void;
 }
+
+const AVAILABLE_LANGUAGES = [
+  { code: 'en', label: '🇬🇧 English' },
+  { code: 'hi', label: '🇮🇳 हिन्दी (Hindi)' },
+  { code: 'kn', label: '🇮🇳 ಕನ್ನಡ (Kannada)' },
+  { code: 'ta', label: '🇮🇳 தமிழ் (Tamil)' },
+  { code: 'te', label: '🇮🇳 తెలుగు (Telugu)' },
+  { code: 'bn', label: '🇮🇳 বাংলা (Bengali)' },
+  { code: 'mr', label: '🇮🇳 मराठी (Marathi)' },
+];
 
 export const Controls: React.FC<ControlsProps> = ({
   isPlaying,
   isMuted = false,
+  currentLanguage = 'en',
+  isRevoicing = false,
   onTogglePlay,
   onNext,
   onPrev,
   onReplay,
   onToggleMute,
+  onOpenSettings,
+  onLanguageChange,
 }) => {
   const buttonStyle: React.CSSProperties = {
     background: 'rgba(30, 41, 59, 0.7)',
@@ -122,6 +140,64 @@ export const Controls: React.FC<ControlsProps> = ({
           >
             <span>{isMuted ? '🔇' : '🔊'}</span>
             <span>{isMuted ? 'Muted' : 'Voice On'}</span>
+          </button>
+        )}
+
+        {/* Revoice Language Switcher */}
+        {onLanguageChange && (
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <select
+              id="select-language"
+              className="control-btn"
+              value={currentLanguage}
+              onChange={(e) => onLanguageChange(e.target.value)}
+              disabled={isRevoicing}
+              style={{
+                ...buttonStyle,
+                appearance: 'none',
+                paddingRight: '28px',
+                background: 'rgba(30, 41, 59, 0.85)',
+                border: '1.5px solid rgba(56, 189, 248, 0.4)',
+                color: '#38bdf8',
+                cursor: isRevoicing ? 'wait' : 'pointer',
+              }}
+              title="Revoice lesson in Indian regional languages"
+            >
+              {AVAILABLE_LANGUAGES.map((lang) => (
+                <option key={lang.code} value={lang.code} style={{ background: '#0f172a', color: '#ffffff' }}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <span
+              style={{
+                position: 'absolute',
+                right: '10px',
+                pointerEvents: 'none',
+                fontSize: '10px',
+                color: '#38bdf8',
+              }}
+            >
+              ▼
+            </span>
+          </div>
+        )}
+
+        {onOpenSettings && (
+          <button
+            id="btn-settings-toggle"
+            className="control-btn"
+            onClick={onOpenSettings}
+            style={{
+              ...buttonStyle,
+              background: 'rgba(30, 41, 59, 0.85)',
+              borderColor: 'rgba(56, 189, 248, 0.35)',
+              color: '#38bdf8',
+            }}
+            title="Learner Preferences & Dyslexia Mode (P)"
+          >
+            <span>⚙️</span>
+            <span>Preferences</span>
           </button>
         )}
       </div>

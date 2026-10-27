@@ -36,7 +36,7 @@ export interface UsePlayerResult {
   progress: number;
 }
 
-export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
+export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlayerResult {
   const [T, setT] = useState(0);
   const [isPlaying, setIsPlaying] = useState(autoPlay);
   const [isMuted, setIsMuted] = useState(false);
@@ -52,6 +52,7 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
   const totalDurationRef = useRef(totalDuration);
   const lessonRef = useRef(lesson);
   const isMutedRef = useRef(isMuted);
+  const speedRef = useRef(speed);
 
   useEffect(() => {
     isPlayingRef.current = isPlaying;
@@ -72,6 +73,14 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
   useEffect(() => {
     isMutedRef.current = isMuted;
   }, [isMuted]);
+
+  useEffect(() => {
+    speedRef.current = speed;
+    audioMapRef.current.forEach((audio) => {
+      audio.playbackRate = speed;
+      audio.preservesPitch = true;
+    });
+  }, [speed]);
 
   // Preloaded audio elements map per scene index
   const audioMapRef = useRef<Map<number, HTMLAudioElement>>(new Map());
@@ -98,6 +107,8 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
         audio.src = scene.audio_url;
         audio.volume = 1.0;
         audio.muted = isMutedRef.current;
+        audio.playbackRate = speedRef.current;
+        audio.preservesPitch = true;
         audioMap.set(idx, audio);
       }
     });
@@ -134,6 +145,8 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
     if (!audio) return;
 
     audio.muted = isMutedRef.current;
+    audio.playbackRate = speedRef.current;
+    audio.preservesPitch = true;
 
     if (Number.isFinite(offsetSec) && offsetSec >= 0) {
       try {
@@ -177,7 +190,7 @@ export function usePlayer(lesson: Lesson, autoPlay = false): UsePlayerResult {
       if (!isPlayingRef.current) return;
 
       const lastTime = lastRafTimeRef.current ?? now;
-      const delta = Math.max(0, now - lastTime);
+      const delta = Math.max(0, now - lastTime) * speedRef.current;
       lastRafTimeRef.current = now;
 
       const currentT = tRef.current;

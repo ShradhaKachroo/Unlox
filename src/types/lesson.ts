@@ -1,5 +1,7 @@
 export type Level = 'beginner' | 'intermediate';
 
+export type SceneMood = 'happy' | 'thinking' | 'excited' | 'curious';
+
 export interface BaseScene {
   id: string;
   heading: string;
@@ -7,6 +9,8 @@ export interface BaseScene {
   caption?: string; // translated on-screen text in the lesson's language; falls back to narration
   duration_ms: number; // set by the backend from audio length; frontend never hard-codes it
   audio_url?: string;
+  mood?: SceneMood;
+  mouth?: number[]; // 0..1 openness values, 40ms per step
 }
 
 export interface TitleCardScene extends BaseScene {
@@ -42,6 +46,23 @@ export interface Lesson {
   level: Level;
   language: string;
   scenes: Scene[];
+}
+
+export interface LessonTimingScene {
+  scene: number;
+  audio?: string;
+  audio_seconds?: number;
+  start: number;
+  duration: number;
+  caption?: string;
+  cues?: unknown;
+}
+
+export interface LessonTiming {
+  language: string;
+  total_seconds: number;
+  scenes: LessonTimingScene[];
+  cues?: unknown;
 }
 
 export interface ValidationResult {

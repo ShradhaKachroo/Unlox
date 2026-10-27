@@ -18,7 +18,14 @@ export const LANGUAGE_LABELS: Record<string, { name: string; nativeName: string 
   mr: { name: 'Marathi', nativeName: 'मराठी' },
 };
 
-export function getFontFamilyForLanguage(lang: string): string {
+export function getFontFamilyForLanguage(lang: string, dyslexia = false): string {
   const code = (lang || 'en').toLowerCase().trim();
+  if (dyslexia) {
+    if (code === 'en') {
+      return '"OpenDyslexic", "Noto Sans", sans-serif';
+    }
+    const base = LANGUAGE_FONTS[code] || LANGUAGE_FONTS['en'];
+    return `${base}, "OpenDyslexic", sans-serif`;
+  }
   return LANGUAGE_FONTS[code] || LANGUAGE_FONTS['en'];
 }

@@ -9,7 +9,8 @@
       "narration": "A loop repeats an instruction for each value in a sequence.",
       "code": null,
       "highlight_lines": null,
-      "items": null
+      "items": null,
+      "mood": "happy"
     },
     {
       "type": "code_walkthrough",
@@ -19,7 +20,8 @@
       "highlight_lines": [
         1
       ],
-      "items": null
+      "items": null,
+      "mood": "thinking"
     },
     {
       "type": "diagram",
@@ -31,7 +33,21 @@
         "i = 0",
         "i = 1",
         "i = 2"
-      ]
+      ],
+      "mood": "thinking"
+    },
+    {
+      "type": "code_walkthrough",
+      "heading": "Local Context: Cricket Over (6 Balls)",
+      "narration": "Think of a loop like a cricket over with 6 balls: for ball in range(6), bowl each ball.",
+      "caption": "Think of a loop like a cricket over with 6 balls: for ball in range(6), bowl each ball.",
+      "code": "# Bowling a 6-ball cricket over\nfor ball in range(6):\n    print(f\"Bowling ball {ball + 1} of 6\")\nprint(\"Over complete!\")",
+      "highlight_lines": [
+        2,
+        3
+      ],
+      "items": null,
+      "mood": "excited"
     }
   ]
 }

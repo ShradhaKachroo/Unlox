@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { getCameraTransform } from '../anim/camera';
 import { seeded } from '../anim/helpers';
 import { clamp01 } from '../anim/ease';
+import { useSettings } from '../context/useSettings';
 
 interface SceneStageProps {
   t: number;
@@ -27,23 +28,28 @@ export const SceneStage: React.FC<SceneStageProps> = ({
   children,
   quality = 'high',
 }) => {
-  const isLow = quality === 'low';
-  const camera = getCameraTransform(t, duration);
+  const { settings } = useSettings();
+  const isReducedMotion = quality === 'low' || settings.dyslexia;
+
+  // In dyslexia/reduced motion mode, keep camera fixed without drift
+  const camera = isReducedMotion
+    ? { transform: 'scale(1.0)', zoom: 1, tiltX: 0, tiltY: 0 }
+    : getCameraTransform(t, duration);
 
   // Soft exit fade in last 400ms of scene
   const exitStart = Math.max(0, duration - 400);
   const exitProgress = t >= exitStart ? clamp01((t - exitStart) / 400) : 0;
   const stageOpacity = 1 - exitProgress * 0.95;
 
-  // Moving radial glow center purely derived from t
-  const glowX = 640 + Math.sin(t / 2200) * 220;
-  const glowY = 320 + Math.cos(t / 1800) * 120;
-  const glowRadius = 450 + Math.sin(t / 1500) * 50;
+  // Moving radial glow center derived from t (static when reduced motion)
+  const glowX = isReducedMotion ? 640 : 640 + Math.sin(t / 2200) * 220;
+  const glowY = isReducedMotion ? 320 : 320 + Math.cos(t / 1800) * 120;
+  const glowRadius = isReducedMotion ? 450 : 450 + Math.sin(t / 1500) * 50;
 
   // Floor grid drift derived from t
-  const floorOffset = (t * 0.04) % 60;
+  const floorOffset = isReducedMotion ? 0 : (t * 0.04) % 60;
 
-  // 32 deterministic particles generated from fixed seed
+  // 30 deterministic particles generated from fixed seed
   const particles = useMemo<Particle[]>(() => {
     const rng = seeded(1337);
     const colors = ['#38bdf8', '#818cf8', '#c084fc', '#34d399', '#f59e0b'];
@@ -75,22 +81,20 @@ export const SceneStage: React.FC<SceneStageProps> = ({
         opacity: stageOpacity,
       }}
     >
-      {/* Dynamic Animated Glow (glides with t) */}
-      {!isLow && (
-        <div
-          style={{
-            position: 'absolute',
-            left: `${glowX - glowRadius}px`,
-            top: `${glowY - glowRadius}px`,
-            width: `${glowRadius * 2}px`,
-            height: `${glowRadius * 2}px`,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(99, 102, 241, 0.12) 40%, rgba(15, 23, 42, 0) 70%)',
-            pointerEvents: 'none',
-            transform: 'translate3d(0, 0, 0)',
-          }}
-        />
-      )}
+      {/* Dynamic Animated Glow (glides with t, or calm static glow in reduced motion) */}
+      <div
+        style={{
+          position: 'absolute',
+          left: `${glowX - glowRadius}px`,
+          top: `${glowY - glowRadius}px`,
+          width: `${glowRadius * 2}px`,
+          height: `${glowRadius * 2}px`,
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, rgba(99, 102, 241, 0.12) 40%, rgba(15, 23, 42, 0) 70%)',
+          pointerEvents: 'none',
+          transform: 'translate3d(0, 0, 0)',
+        }}
+      />
 
       {/* 3D Perspective Floor Grid */}
       <div
@@ -104,7 +108,7 @@ export const SceneStage: React.FC<SceneStageProps> = ({
           transform: 'rotateX(62deg)',
           transformOrigin: 'bottom center',
           pointerEvents: 'none',
-          opacity: isLow ? 0.08 : 0.22,
+          opacity: isReducedMotion ? 0.08 : 0.22,
           maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%)',
           WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%)',
         }}
@@ -119,8 +123,8 @@ export const SceneStage: React.FC<SceneStageProps> = ({
         </svg>
       </div>
 
-      {/* Floating Particles (Skipped in low quality mode) */}
-      {!isLow && (
+      {/* Floating Particles (Disabled in low quality or dyslexia mode) */}
+      {!isReducedMotion && (
         <svg
           style={{
             position: 'absolute',
@@ -133,7 +137,6 @@ export const SceneStage: React.FC<SceneStageProps> = ({
           }}
         >
           {particles.map((p, idx) => {
-            // Y position moves upward with t and wraps cleanly
             const currentY = (p.baseY - t * p.speed) % 720;
             const posY = currentY < 0 ? currentY + 720 : currentY;
             const pulse = 0.8 + 0.2 * Math.sin(t * 0.003 + idx);

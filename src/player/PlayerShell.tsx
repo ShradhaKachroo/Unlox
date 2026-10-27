@@ -7,6 +7,12 @@ import { CaptionBar } from './CaptionBar';
 import { ProgressBar } from './ProgressBar';
 import { Controls } from './Controls';
 import { DebugOverlay } from './DebugOverlay';
+import { SettingsModal } from './SettingsModal';
+import { useSettings } from '../context/useSettings';
+import { Blu } from '../mascot/Blu';
+import { getAnchor } from '../mascot/anchors';
+import { apiRevoiceLesson } from '../api/lessonApi';
+import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
 
@@ -14,15 +20,21 @@ interface PlayerShellProps {
   lesson: Lesson;
   onBackToInput?: () => void;
   statusBadge?: string;
+  onLessonChange?: (lesson: Lesson) => void;
 }
 
 export const PlayerShell: React.FC<PlayerShellProps> = ({
   lesson,
   onBackToInput,
   statusBadge,
+  onLessonChange,
 }) => {
   const [showDebug, setShowDebug] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [revoiceStatus, setRevoiceStatus] = useState<string | null>(null);
+  const [revoiceError, setRevoiceError] = useState<string | null>(null);
   const [quality] = useState<QualityMode>(getInitialQuality);
+  const { settings } = useSettings();
 
   const {
     T,
@@ -44,7 +56,41 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
     totalDuration,
     currentScene,
     isPause,
-  } = usePlayer(lesson, false); // Default to paused so user click guarantees audio playback permission
+  } = usePlayer(lesson, false, settings.speed); // Passes speed setting to audio playbackRate
+
+  const handleLanguageChange = async (newLang: string) => {
+    if (newLang === lesson.language) return;
+
+    const targetLangLabel = LANGUAGE_LABELS[newLang]?.name || newLang.toUpperCase();
+    setRevoiceStatus(`Revoicing in ${targetLangLabel}...`);
+    setRevoiceError(null);
+
+    try {
+      const revoiced = await apiRevoiceLesson({
+        lesson_id: lesson.id,
+        lang: newLang,
+        voice: settings.voice,
+      });
+
+      // Keep same scene index and relative position
+      const currentRelPos = sceneDuration > 0 ? localT / sceneDuration : 0;
+      const targetScene = revoiced.scenes[sceneIndex] || revoiced.scenes[0];
+      const targetLocalT = Math.round(currentRelPos * targetScene.duration_ms);
+      const targetGlobalT = getSceneStartTime(revoiced, sceneIndex) + targetLocalT;
+
+      if (onLessonChange) {
+        onLessonChange(revoiced);
+      }
+      setTimeout(() => {
+        seek(targetGlobalT);
+      }, 50);
+
+      setRevoiceStatus(null);
+    } catch (err) {
+      setRevoiceStatus(null);
+      setRevoiceError(`Could not revoice: ${(err as Error).message}`);
+    }
+  };
 
   // Keyboard shortcut listener
   useEffect(() => {
@@ -76,6 +122,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
       } else if (e.code === 'KeyD') {
         e.preventDefault();
         setShowDebug((prev) => !prev);
+      } else if (e.code === 'KeyP') {
+        e.preventDefault();
+        setShowSettings((prev) => !prev);
       }
     };
 
@@ -99,7 +148,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         maxHeight: '100vh',
         background: '#040711',
         color: '#f8fafc',
-        fontFamily: getFontFamilyForLanguage(lesson.language),
+        fontFamily: getFontFamilyForLanguage(lesson.language, settings.dyslexia),
         overflow: 'hidden',
         position: 'relative',
       }}
@@ -268,6 +317,28 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           >
             {Math.round(localT / 1000)}s / {Math.round(sceneDuration / 1000)}s
           </div>
+
+          <button
+            id="btn-header-settings"
+            onClick={() => setShowSettings(true)}
+            style={{
+              background: 'rgba(30, 41, 59, 0.8)',
+              border: '1px solid rgba(56, 189, 248, 0.4)',
+              color: '#38bdf8',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+            }}
+            title="Learner Preferences & Dyslexia Mode (P)"
+          >
+            <span>⚙️</span>
+            <span>{settings.speed}x</span>
+          </button>
         </div>
       </header>
 
@@ -297,6 +368,17 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             <div style={{ color: '#ef4444', textAlign: 'center', padding: '100px' }}>
               No scene available.
             </div>
+          )}
+
+          {/* Teacher Mascot Blu (toggled via Settings, pure function of time) */}
+          {settings.showBlu && currentScene && (
+            <Blu
+              scene={currentScene}
+              t={localT}
+              duration={sceneDuration}
+              mood={currentScene.mood}
+              anchor={getAnchor(currentScene, localT, sceneDuration)}
+            />
           )}
 
           {/* Initial Play Overlay: Provides direct user gesture for 100% audio permission */}
@@ -390,6 +472,76 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           </div>
         )}
 
+        {/* Revoice Loading Status Banner */}
+        {revoiceStatus && (
+          <div
+            id="banner-revoice-status"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.95) 0%, rgba(126, 34, 206, 0.98) 100%)',
+              color: '#ffffff',
+              padding: '10px 22px',
+              borderRadius: '9999px',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 25px rgba(168, 85, 247, 0.5)',
+              border: '1.5px solid #c084fc',
+              fontWeight: 700,
+              fontSize: '13px',
+              zIndex: 60,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
+            <span style={{ fontSize: '15px' }}>🎙️</span>
+            <span>{revoiceStatus}</span>
+          </div>
+        )}
+
+        {/* Revoice Error Banner (Dismissible) */}
+        {revoiceError && (
+          <div
+            id="banner-revoice-error"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.95) 0%, rgba(185, 28, 28, 0.98) 100%)',
+              color: '#ffffff',
+              padding: '10px 20px',
+              borderRadius: '9999px',
+              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6), 0 0 25px rgba(239, 68, 68, 0.4)',
+              border: '1.5px solid #f87171',
+              fontWeight: 600,
+              fontSize: '13px',
+              zIndex: 60,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+            }}
+          >
+            <span>⚠️ {revoiceError}</span>
+            <button
+              onClick={() => setRevoiceError(null)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: '#ffffff',
+                borderRadius: '50%',
+                width: '20px',
+                height: '20px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '11px',
+              }}
+              title="Dismiss error"
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         <DebugOverlay
           visible={showDebug}
           T={T}
@@ -442,6 +594,8 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           <Controls
             isPlaying={isPlaying}
             isMuted={isMuted}
+            currentLanguage={lesson.language}
+            isRevoicing={!!revoiceStatus}
             onPlay={play}
             onPause={pause}
             onTogglePlay={togglePlay}
@@ -449,9 +603,14 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             onPrev={prev}
             onReplay={replay}
             onToggleMute={toggleMute}
+            onOpenSettings={() => setShowSettings(true)}
+            onLanguageChange={handleLanguageChange}
           />
         </div>
       </footer>
+
+      {/* Learner Preferences Modal */}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
     </div>
   );
 };

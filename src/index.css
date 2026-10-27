@@ -58,6 +58,40 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* Dyslexia-Friendly Mode Styling */
+[data-dyslexia="true"] {
+  --font-dyslexia: 'OpenDyslexic', 'Noto Sans', system-ui, sans-serif;
+}
+
+[data-dyslexia="true"] body,
+[data-dyslexia="true"] #root {
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.16em !important;
+}
+
+/* Remove italics across all scripts in dyslexia mode */
+[data-dyslexia="true"] * {
+  font-style: normal !important;
+}
+
+/* Caption bar in dyslexia mode: warm off-white / cream panel with dark high-contrast text */
+[data-dyslexia="true"] #caption-container,
+[data-dyslexia="true"] .caption-container {
+  background: #fffdf5 !important;
+  border-top: 2px solid #e5dec9 !important;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+[data-dyslexia="true"] #caption-text,
+[data-dyslexia="true"] .caption-text {
+  color: #0f172a !important;
+  letter-spacing: 0.05em !important;
+  word-spacing: 0.16em !important;
+  line-height: 1.7 !important;
+  text-align: left !important;
+  text-shadow: none !important;
+}
+
 /* Responsive Player Shell utilities */
 @media (max-width: 640px) {
   .player-header {

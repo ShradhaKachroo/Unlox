@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import type { Lesson, Level } from '../types/lesson';
-import { validateLesson } from '../types/validate';
 import { LANGUAGE_LABELS } from '../utils/fonts';
 import { fetchLessonWithTiming } from '../utils/loader';
+import { useSettings } from '../context/useSettings';
+import { apiGenerateLesson } from '../api/lessonApi';
 
 interface InputPageProps {
   onLessonReady: (lesson: Lesson, sourceBadge: string) => void;
@@ -16,10 +17,12 @@ const PRESET_TOPICS = [
 ];
 
 export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
+  const { settings } = useSettings();
   const [topic, setTopic] = useState('Python For Loops');
   const [level, setLevel] = useState<Level>('beginner');
   const [language, setLanguage] = useState('en');
   const [targetLength, setTargetLength] = useState(45);
+  const [localContext, setLocalContext] = useState(true);
   const [loading, setLoading] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
@@ -34,35 +37,17 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
     setLoading(true);
     setStatusMessage('Contacting lesson generation backend...');
 
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout for quick fallback
-
-      const res = await fetch(`${apiUrl}/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          topic: topic.trim(),
-          level,
-          language,
-          target_length_seconds: targetLength,
-        }),
-        signal: controller.signal,
+      const generatedLesson = await apiGenerateLesson({
+        topic: topic.trim(),
+        level,
+        language,
+        target_length_seconds: targetLength,
+        voice: settings.voice,
+        local_context: localContext,
       });
-
-      clearTimeout(timeoutId);
-
-      if (res.ok) {
-        const data = await res.json();
-        const validation = validateLesson(data);
-        if (validation.ok && validation.lesson) {
-          onLessonReady(validation.lesson, 'Backend API');
-          return;
-        }
-      }
-      throw new Error('Backend response invalid or unavailable');
+      onLessonReady(generatedLesson, 'Backend API');
+      return;
     } catch {
       // Backend not running or call failed -> graceful offline fallback to sample
       setStatusMessage(`Loading offline verified sample for [${language.toUpperCase()}]...`);
@@ -345,6 +330,47 @@ export const InputPage: React.FC<InputPageProps> = ({ onLessonReady }) => {
               <span>60s (Standard)</span>
               <span>90s (In-depth)</span>
             </div>
+          </div>
+
+          {/* Local Context Examples Toggle */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              background: 'rgba(56, 189, 248, 0.08)',
+              border: '1px solid rgba(56, 189, 248, 0.25)',
+            }}
+          >
+            <input
+              id="toggle-local-context"
+              type="checkbox"
+              checked={localContext}
+              onChange={(e) => setLocalContext(e.target.checked)}
+              style={{
+                width: '18px',
+                height: '18px',
+                accentColor: '#38bdf8',
+                cursor: 'pointer',
+              }}
+            />
+            <label
+              htmlFor="toggle-local-context"
+              style={{
+                cursor: 'pointer',
+                fontSize: '14px',
+                color: '#e2e8f0',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <span style={{ fontWeight: 600 }}>Use local examples (cricket, chai, trains)</span>
+              <span style={{ fontSize: '12px', color: '#94a3b8' }}>
+                Grounds abstract programming logic in relatable cultural contexts
+              </span>
+            </label>
           </div>
 
           {/* Status Message */}

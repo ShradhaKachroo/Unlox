@@ -17,6 +17,7 @@
     "@fontsource/noto-sans-kannada": "^5.3.0",
     "@fontsource/noto-sans-tamil": "^5.3.0",
     "@fontsource/noto-sans-telugu": "^5.3.0",
+    "@fontsource/opendyslexic": "^5.3.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

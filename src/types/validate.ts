@@ -63,6 +63,21 @@ export function validateLesson(raw: unknown): ValidationResult {
 
     const audio_url = typeof s.audio_url === 'string' && s.audio_url.trim() ? s.audio_url.trim() : undefined;
 
+    let mood: 'happy' | 'thinking' | 'excited' | 'curious' | undefined = undefined;
+    if (s.mood === 'happy' || s.mood === 'thinking' || s.mood === 'excited' || s.mood === 'curious') {
+      mood = s.mood;
+    }
+
+    let mouth: number[] | undefined = undefined;
+    if (Array.isArray(s.mouth)) {
+      mouth = s.mouth
+        .slice(0, 5000)
+        .map((v) => {
+          const num = typeof v === 'number' ? v : Number(v);
+          return isNaN(num) ? 0 : Math.max(0, Math.min(1, num));
+        });
+    }
+
     const base = {
       id: sceneId,
       heading,
@@ -70,6 +85,8 @@ export function validateLesson(raw: unknown): ValidationResult {
       caption,
       duration_ms,
       audio_url,
+      mood,
+      mouth,
     };
 
     const type = typeof s.type === 'string' ? s.type : 'title_card';

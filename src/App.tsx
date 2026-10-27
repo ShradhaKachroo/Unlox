@@ -132,6 +132,7 @@ export const App: React.FC = () => {
     <PlayerShell
       lesson={currentLesson}
       onBackToInput={() => setView('input')}
+      onLessonChange={setCurrentLesson}
       statusBadge={statusBadge}
     />
   );
