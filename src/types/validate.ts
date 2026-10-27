@@ -20,7 +20,7 @@ export function validateLesson(raw: unknown): ValidationResult {
     ? obj.title.trim()
     : 'Visual Lesson';
 
-  const level = obj.level === 'intermediate' ? 'intermediate' : 'beginner';
+  const level: Level = obj.level === 'advanced' ? 'advanced' : (obj.level === 'intermediate' ? 'intermediate' : 'beginner');
   const language = typeof obj.language === 'string' && obj.language.trim()
     ? obj.language.trim().toLowerCase()
     : 'en';

@@ -222,7 +222,7 @@ class Scene(BaseModel):
 class Lesson(BaseModel):
     id: Optional[str] = None
     title: str = Field(min_length=1, max_length=100)
-    level: Literal["beginner", "intermediate"] = "beginner"
+    level: Literal["beginner", "intermediate", "advanced"] = "beginner"
     language: str = "en"
     scenes: list[Scene] = Field(min_length=2, max_length=12)  # model_validator caps output at 10
 

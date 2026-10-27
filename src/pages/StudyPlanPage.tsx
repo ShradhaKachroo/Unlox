@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import type { Level } from '../types/lesson';
 
 interface StudyPlanPageProps {
   onSelectTopic: (topic: string, lengthSeconds: number) => void;
@@ -15,7 +16,7 @@ interface SyllabusTrack {
     title: string;
     description: string;
     duration: number; // 45 or 120
-    level: 'beginner' | 'intermediate';
+    level: Level;
   }>;
 }
 
@@ -24,7 +25,7 @@ const TRACKS: SyllabusTrack[] = [
     id: 'python-core',
     name: 'Python Programming Essentials',
     icon: '🐍',
-    description: 'Master the fundamental building blocks of Python step-by-step with visual cuts.',
+    description: 'Master the fundamental building blocks of Python step-by-step with visual blackboard cuts.',
     modules: [
       { id: 'm1', title: 'Variables and Memory in Python', description: 'Understand how values are stored in memory addresses.', duration: 45, level: 'beginner' },
       { id: 'm2', title: 'If-Else Conditional Logic', description: 'Branching decisions, booleans, and comparison operators.', duration: 45, level: 'beginner' },
@@ -44,6 +45,19 @@ const TRACKS: SyllabusTrack[] = [
       { id: 'd3', title: 'Bubble Sort and Swapping Logic', description: 'Visualizing element comparisons and bubble progression.', duration: 120, level: 'beginner' },
       { id: 'd4', title: 'Recursion and Call Stacks', description: 'Base cases, recursive unwinding, and stack memory frames.', duration: 120, level: 'intermediate' },
       { id: 'd5', title: 'Hash Tables and Collision Handling', description: 'Key-value mapping, hash functions, and O(1) lookups.', duration: 120, level: 'intermediate' },
+    ],
+  },
+  {
+    id: 'advanced-systems',
+    name: 'Advanced Systems & Engineering',
+    icon: '🚀',
+    description: 'High-rigor deep dive into runtime internals, performance optimization, and concurrency.',
+    modules: [
+      { id: 'a1', title: 'Python Generators & Memory Streams', description: 'Yield expressions, lazy evaluation, and pipeline streaming.', duration: 120, level: 'advanced' },
+      { id: 'a2', title: 'Decorators & Function Wrappers', description: 'Higher-order functions, closures, and wrapping execution.', duration: 120, level: 'advanced' },
+      { id: 'a3', title: 'CPython GIL & Multithreading Limits', description: 'Global interpreter lock, CPU vs I/O bound concurrency.', duration: 120, level: 'advanced' },
+      { id: 'a4', title: 'AsyncIO & Event Loop Architecture', description: 'Coroutines, tasks, and non-blocking asynchronous execution.', duration: 120, level: 'advanced' },
+      { id: 'a5', title: 'Memory Management & Garbage Collection', description: 'Reference counting, cyclic GC, and object deallocation.', duration: 120, level: 'advanced' },
     ],
   },
 ];
@@ -76,26 +90,26 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: 'radial-gradient(ellipse at 50% 10%, #0c1836 0%, #050813 70%, #020409 100%)',
+        background: 'radial-gradient(ellipse at 50% 15%, #142018 0%, #0d1711 50%, #060b08 100%)',
         color: '#f8fafc',
-        fontFamily: '"Noto Sans", sans-serif',
-        padding: '30px 24px',
+        fontFamily: '"Outfit", sans-serif',
+        padding: '32px 24px',
         boxSizing: 'border-box',
       }}
     >
       <div style={{ maxWidth: '960px', margin: '0 auto' }}>
         {/* Navigation Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
           <button
             type="button"
             onClick={onBack}
             style={{
               padding: '8px 16px',
-              borderRadius: '10px',
-              background: 'rgba(30, 41, 59, 0.7)',
-              border: '1px solid #334155',
-              color: '#93c5fd',
-              fontSize: '14px',
+              borderRadius: '8px',
+              background: 'rgba(255, 255, 255, 0.08)',
+              border: '1px dashed rgba(254, 240, 138, 0.4)',
+              color: '#fef08a',
+              fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
@@ -103,147 +117,181 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
               gap: '6px',
             }}
           >
-            ← Back to Generator
+            ← Back to Blackboard Studio
           </button>
 
-          <span style={{ fontSize: '14px', color: '#64748b' }}>
-            Course Progress: <strong style={{ color: '#4ade80' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
+          <span style={{ fontSize: '13px', color: '#86efac', fontFamily: '"Kalam", cursive' }}>
+            Curriculum Progress: <strong style={{ color: '#fef08a' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
           </span>
         </div>
 
         {/* Header */}
-        <div style={{ marginBottom: '28px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, margin: '0 0 8px 0', color: '#ffffff' }}>
-            🗺️ Student Visual Study Plan
+        <div style={{ marginBottom: '24px' }}>
+          <h1
+            style={{
+              fontSize: '32px',
+              fontWeight: 800,
+              margin: '0 0 6px 0',
+              color: '#ffffff',
+              fontFamily: '"Kalam", cursive',
+              textShadow: '0 0 15px rgba(255, 255, 255, 0.2)',
+            }}
+          >
+            📋 Student Blackboard Curriculum
           </h1>
-          <p style={{ margin: 0, fontSize: '15px', color: '#94a3b8' }}>
-            Follow structured curriculum paths. Click any topic to generate an on-demand animated video lesson!
+          <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
+            Structured learning pathways from beginner to advanced. Click any module to generate its visual lesson!
           </p>
         </div>
 
-        {/* Track Tabs */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '28px' }}>
-          {TRACKS.map((track) => (
-            <button
-              key={track.id}
-              type="button"
-              onClick={() => setSelectedTrackId(track.id)}
-              style={{
-                flex: 1,
-                padding: '16px 20px',
-                borderRadius: '14px',
-                background: selectedTrackId === track.id ? 'rgba(56, 189, 248, 0.15)' : 'rgba(15, 23, 42, 0.6)',
-                border: selectedTrackId === track.id ? '2px solid #38bdf8' : '1px solid #334155',
-                color: '#ffffff',
-                textAlign: 'left',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              <div style={{ fontSize: '24px', marginBottom: '6px' }}>{track.icon}</div>
-              <div style={{ fontSize: '16px', fontWeight: 700, color: selectedTrackId === track.id ? '#38bdf8' : '#f8fafc' }}>
-                {track.name}
-              </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px' }}>
-                {track.modules.length} Lessons
-              </div>
-            </button>
-          ))}
-        </div>
-
-        {/* Track Roadmap Modules */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-          {currentTrack.modules.map((mod, idx) => {
-            const isDone = !!completed[mod.id];
+        {/* Syllabus Track Selector */}
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          {TRACKS.map((t) => {
+            const isSelected = t.id === selectedTrackId;
             return (
-              <div
-                key={mod.id}
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setSelectedTrackId(t.id)}
                 style={{
-                  background: isDone ? 'rgba(34, 197, 94, 0.08)' : 'rgba(15, 23, 42, 0.8)',
-                  border: isDone ? '1px solid rgba(34, 197, 94, 0.35)' : '1px solid rgba(56, 189, 248, 0.2)',
-                  borderRadius: '16px',
-                  padding: '20px 24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '20px',
+                  flex: 1,
+                  minWidth: '220px',
+                  padding: '14px 18px',
+                  borderRadius: '12px',
+                  background: isSelected ? 'rgba(52, 211, 153, 0.15)' : 'rgba(14, 24, 18, 0.7)',
+                  border: isSelected ? '2px solid #34d399' : '1px solid rgba(255, 255, 255, 0.12)',
+                  color: '#ffffff',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: isSelected ? '0 0 20px rgba(52, 211, 153, 0.25)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
-                  <button
-                    type="button"
-                    onClick={() => toggleComplete(mod.id)}
-                    style={{
-                      width: '28px',
-                      height: '28px',
-                      borderRadius: '50%',
-                      background: isDone ? '#22c55e' : '#1e293b',
-                      border: isDone ? 'none' : '2px solid #475569',
-                      color: '#ffffff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      marginTop: '2px',
-                    }}
-                    title={isDone ? 'Mark uncompleted' : 'Mark completed'}
-                  >
-                    {isDone ? '✓' : ''}
-                  </button>
-
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 700, color: '#38bdf8' }}>
-                        Lesson {idx + 1}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '11px',
-                          padding: '2px 8px',
-                          borderRadius: '6px',
-                          background: mod.duration >= 100 ? 'rgba(168, 85, 247, 0.2)' : 'rgba(56, 189, 248, 0.15)',
-                          color: mod.duration >= 100 ? '#c084fc' : '#7dd3fc',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {mod.duration >= 100 ? '⏱️ 2 min deep-dive' : '⚡ 45s fast overview'}
-                      </span>
-                    </div>
-
-                    <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 4px 0', color: isDone ? '#cbd5e1' : '#ffffff' }}>
-                      {mod.title}
-                    </h3>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#94a3b8' }}>
-                      {mod.description}
-                    </p>
-                  </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '20px' }}>{t.icon}</span>
+                  <span style={{ fontWeight: 700, fontSize: '15px' }}>{t.name}</span>
                 </div>
+                <div style={{ fontSize: '12px', color: '#94a3b8' }}>{t.description}</div>
+              </button>
+            );
+          })}
+        </div>
 
-                <div>
+        {/* Modules List inside Chalkboard Frame */}
+        <div
+          style={{
+            border: '8px solid #2e1c0c',
+            borderRadius: '16px',
+            background: '#0d1711',
+            boxShadow: 'inset 0 0 40px rgba(0, 0, 0, 0.9), 0 20px 40px rgba(0, 0, 0, 0.8)',
+            padding: '24px',
+          }}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {currentTrack.modules.map((m, idx) => {
+              const isDone = !!completed[m.id];
+              let levelColor = '#86efac';
+              if (m.level === 'intermediate') levelColor = '#fef08a';
+              if (m.level === 'advanced') levelColor = '#c084fc';
+
+              return (
+                <div
+                  key={m.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '16px 20px',
+                    borderRadius: '10px',
+                    background: isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.04)',
+                    border: isDone ? '1px solid #10b981' : '1px dashed rgba(255, 255, 255, 0.15)',
+                    gap: '16px',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                    <button
+                      type="button"
+                      onClick={() => toggleComplete(m.id)}
+                      style={{
+                        width: '26px',
+                        height: '26px',
+                        borderRadius: '50%',
+                        border: isDone ? 'none' : '2px solid rgba(255, 255, 255, 0.3)',
+                        background: isDone ? '#10b981' : 'transparent',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        flexShrink: 0,
+                      }}
+                      title={isDone ? 'Mark as incomplete' : 'Mark as complete'}
+                    >
+                      {isDone ? '✓' : ''}
+                    </button>
+
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '3px' }}>
+                        <span style={{ fontSize: '12px', color: '#6ee7b7', fontWeight: 700 }}>
+                          #{idx + 1}
+                        </span>
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: '15px',
+                            color: isDone ? '#94a3b8' : '#ffffff',
+                            textDecoration: isDone ? 'line-through' : 'none',
+                          }}
+                        >
+                          {m.title}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            background: `${levelColor}22`,
+                            color: levelColor,
+                            border: `1px solid ${levelColor}44`,
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {m.level}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '13px', color: '#94a3b8' }}>{m.description}</div>
+                    </div>
+                  </div>
+
                   <button
                     type="button"
-                    onClick={() => onSelectTopic(mod.title, mod.duration)}
+                    onClick={() => onSelectTopic(m.title, m.duration)}
                     style={{
-                      padding: '10px 18px',
-                      borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                      border: '1px solid #38bdf8',
+                      padding: '9px 18px',
+                      borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                      border: '1px solid #34d399',
                       color: '#ffffff',
                       fontSize: '13px',
                       fontWeight: 700,
                       cursor: 'pointer',
+                      whiteSpace: 'nowrap',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      whiteSpace: 'nowrap',
+                      boxShadow: '0 0 15px rgba(52, 211, 153, 0.25)',
                     }}
                   >
-                    <span>⚡ Generate Video</span>
+                    <span>▶</span>
+                    <span>Generate ({m.duration}s)</span>
                   </button>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>

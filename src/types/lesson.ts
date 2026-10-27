@@ -1,4 +1,4 @@
-export type Level = 'beginner' | 'intermediate';
+export type Level = 'beginner' | 'intermediate' | 'advanced';
 
 export type SceneMood = 'happy' | 'thinking' | 'excited' | 'curious';
 

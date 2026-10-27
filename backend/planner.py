@@ -41,6 +41,16 @@ LEVEL_RULES = {
         "- Cover edge cases or Pythonic best practices explicitly.\n"
         "- Tone: collegial, peer-to-peer.\n"
     ),
+    "advanced": (
+        "TARGET LEVEL: ADVANCED\n"
+        "Scene order (flexible, use as many as needed): "
+        "title_card → production pattern code (≤8 lines) → internal architecture / memory diagram → "
+        "algorithmic trade-offs & time complexity → high-throughput edge case code → optimization breakdown diagram → quiz.\n"
+        "- Assume deep knowledge of standard library, OOP, and data structures.\n"
+        "- Focus on runtime performance, memory layout, CPython internals, async/concurrency, and Big-O limits.\n"
+        "- Code: production-grade patterns (type hints, context managers, generators, concurrency).\n"
+        "- Tone: expert, technical, high-rigor engineering insight.\n"
+    ),
 }
 
 # ── Simpler rules (override when simpler=True) ────────────────────────────────

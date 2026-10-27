@@ -375,7 +375,7 @@ def clear_cache():
 # ── Request models ─────────────────────────────────────────────────────────────
 class GenerateRequest(BaseModel):
     topic: str = Field(min_length=2, max_length=100)
-    level: Literal["beginner", "intermediate"] = "beginner"
+    level: Literal["beginner", "intermediate", "advanced"] = "beginner"
     language: str = "en"
     target_seconds: Optional[int] = None        # 30–120
     target_length_seconds: Optional[int] = None  # legacy alias
