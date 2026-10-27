@@ -427,6 +427,8 @@ def generate(req: GenerateRequest):
     cache = _get_cache()
     seconds: dict = {}
 
+    target_lang = req.language if req.language in SUPPORTED else "en"
+
     # ── 1. Plan (English, cached) ─────────────────────────────────────────────
     plan_hit = plan_key in cache
     if plan_hit:
@@ -441,6 +443,7 @@ def generate(req: GenerateRequest):
             level=req.level,
             local_context=req.local_context,
             target_seconds=target_sec,
+            picked_language=target_lang,
             simpler=req.simpler,
             previous_question=req.previous_question,
             scene_count=req_scene_count,
@@ -455,35 +458,39 @@ def generate(req: GenerateRequest):
     with open(os.path.join(lesson_root, "lesson_master.json"), "w", encoding="utf-8") as f:
         json.dump(lesson_en.model_dump(), f, indent=2, ensure_ascii=False)
 
-    # ── 2. English voice is ALWAYS generated first for immediate playback ─────
-    en_voice_key = _voice_cache_key(lesson_id, "en")
-    en_voice_hit = en_voice_key in cache and cache[en_voice_key].get("status") == "ready"
-    en_lang_file = os.path.join(OUT_DIR, "lessons", lesson_id, "en", "lesson.json")
+    # ── 2. Generate voice in user's SELECTED language for immediate playback ───
+    if target_lang != "en":
+        target_lesson = _cached_translate_lesson(lesson_en, target_lang)
+    else:
+        target_lesson = lesson_en
 
-    if os.path.exists(en_lang_file) and en_voice_hit:
-        with open(en_lang_file, "r", encoding="utf-8") as f:
-            en_lesson_dict = json.load(f)
-        en_timing = cache[en_voice_key]["timing"]
+    target_voice_key = _voice_cache_key(lesson_id, target_lang)
+    target_voice_hit = target_voice_key in cache and cache[target_voice_key].get("status") == "ready"
+    target_lang_file = os.path.join(OUT_DIR, "lessons", lesson_id, target_lang, "lesson.json")
+
+    if os.path.exists(target_lang_file) and target_voice_hit:
+        with open(target_lang_file, "r", encoding="utf-8") as f:
+            target_lesson_dict = json.load(f)
+        target_timing = cache[target_voice_key]["timing"]
         seconds["voice"] = 0.0
-        print(f"[generate] English voice cache hit for '{req.topic}'")
+        print(f"[generate] {target_lang} voice cache hit for '{req.topic}'")
     else:
         t = time.time()
-        en_timing, en_lesson_dict = _generate_lang_voice(lesson_id, lesson_en, "en", req.voice)
+        target_timing, target_lesson_dict = _generate_lang_voice(lesson_id, target_lesson, target_lang, req.voice)
         seconds["voice"] = round(time.time() - t, 1)
-        cache[en_voice_key] = {"status": "ready", "timing": en_timing, "lesson": en_lesson_dict}
+        cache[target_voice_key] = {"status": "ready", "timing": target_timing, "lesson": target_lesson_dict}
         _persist_cache()
 
     total_stage = round(sum(seconds.values()), 1)
     print(
-        f"[generate] plan: {seconds['plan']}s | en voice: {seconds.get('voice', 0)}s | total: {total_stage}s"
-        f" | video: {en_timing['total_seconds']}s"
+        f"[generate] plan: {seconds['plan']}s | {target_lang} voice: {seconds.get('voice', 0)}s | total: {total_stage}s"
+        f" | video: {target_timing['total_seconds']}s"
     )
 
-    # ── 3. Background queue: Hindi first, then Kannada ─────────────────────────
-    # The user can play English right away while Hindi and Kannada generate in sequence
-    bg_langs = ["hi", "kn"]
+    # ── 3. Background queue: Queue in English only (if user selected non-English) ──
+    bg_langs = ["en"] if target_lang != "en" else []
     pending_to_enqueue = []
-    voices_status: dict[str, str] = {"en": "ready"}
+    voices_status: dict[str, str] = {target_lang: "ready"}
 
     for lang in bg_langs:
         lang_file = os.path.join(OUT_DIR, "lessons", lesson_id, lang, "lesson.json")
@@ -506,12 +513,12 @@ def generate(req: GenerateRequest):
         "lesson_id": lesson_id,
         "source": source,
         "error": "Model validation failed; running verified fallback lesson" if source == "fallback" else None,
-        "lesson": en_lesson_dict,
-        **en_lesson_dict,   # flattened for legacy players
-        "timing": {"en": en_timing},
+        "lesson": target_lesson_dict,
+        **target_lesson_dict,   # flattened for legacy players
+        "timing": {target_lang: target_timing},
         "voices": voices_status,
         "stage_seconds": seconds,
-        "cache": {"plan_hit": plan_hit, "voice_hit": en_voice_hit},
+        "cache": {"plan_hit": plan_hit, "voice_hit": target_voice_hit},
     }
     return response
 
