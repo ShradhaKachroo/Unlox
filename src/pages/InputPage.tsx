@@ -27,7 +27,7 @@ export const InputPage: React.FC<InputPageProps> = ({
   onOpenLibrary,
   onOpenStudyPlan,
   initialTopic = '',
-  initialDuration = 105,
+  initialDuration = 120,
 }) => {
   const { settings } = useSettings();
   const [topic, setTopic] = useState(initialTopic);

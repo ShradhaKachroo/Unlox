@@ -206,8 +206,222 @@ CURATED_TOPICS = {
 }
 
 
-def _build_generic_lesson(topic: str, level: str) -> dict:
+CURATED_2MIN_TOPICS = {
+    "loops": {
+        "title": "Python Loops: Deep Dive & Patterns",
+        "level": "beginner",
+        "language": "en",
+        "scenes": [
+            {
+                "type": "title_card",
+                "heading": "Mastering Python Loops & Iteration",
+                "narration": "Welcome to this in-depth lesson on Python loops. Loops are the cornerstone of automation in computer programming, allowing you to repeat instructions across lists, sequences, and streaming data cleanly without writing boilerplate code.",
+                "mood": "happy",
+            },
+            {
+                "type": "code_walkthrough",
+                "heading": "Step 1: The Classic For Loop with range()",
+                "code": "for i in range(3):\n    print(f'Processing task item: {i}')\nprint('All 3 tasks completed successfully!')",
+                "highlight_lines": [1, 2],
+                "narration": "Let us begin with the standard for loop using Python's built-in range function. The range of three produces three integers: zero, one, and two. The variable i receives each value sequentially and runs the indented print block.",
+                "mood": "curious",
+            },
+            {
+                "type": "diagram",
+                "heading": "Step 2: Iteration Execution Trace",
+                "items": [
+                    "Iteration 1: i = 0 -> executes print for item 0",
+                    "Iteration 2: i = 1 -> executes print for item 1",
+                    "Iteration 3: i = 2 -> executes print for item 2",
+                    "Sequence ends -> proceeds to final statement",
+                ],
+                "narration": "Look closely at the execution flow. In each cycle, Python assigns the next element from the iterator into the loop variable, pauses until the indented block finishes, and advances until the sequence is completely exhausted.",
+                "mood": "thinking",
+            },
+            {
+                "type": "code_walkthrough",
+                "heading": "Step 3: Condition-Driven While Loops",
+                "code": "energy = 3\nwhile energy > 0:\n    print(f'Robot moving forward, battery: {energy}')\n    energy -= 1\nprint('Battery empty, docking robot!')",
+                "highlight_lines": [2, 4],
+                "narration": "In contrast to for loops, a while loop executes as long as a boolean expression remains true. Here, the robot moves forward each turn, decrementing its energy counter until zero is reached, which cleanly breaks repetition.",
+                "mood": "curious",
+            },
+            {
+                "type": "diagram",
+                "heading": "Step 4: For vs While Decision Framework",
+                "items": [
+                    "Use For Loops: Iterating over fixed collections, lists, or ranges",
+                    "Use While Loops: Waiting for unknown conditions or event streams",
+                    "Loop Control: Use break to exit early and continue to skip steps",
+                    "Best Practice: Always verify loop termination to avoid infinite loops",
+                ],
+                "narration": "Here is your key programming takeaway: reach for a for loop when your collection size is known in advance, and use a while loop when waiting for dynamic conditions. Always ensure state updates to avoid infinite loops.",
+                "mood": "excited",
+            },
+            {
+                "type": "quiz",
+                "heading": "Loops Knowledge Check",
+                "question": "What is the primary difference between a Python for loop and a while loop?",
+                "options": [
+                    "For loops iterate over sequences; while loops repeat based on a boolean condition",
+                    "While loops run faster because they skip memory allocation entirely",
+                    "For loops can only process strings, whereas while loops only handle integers",
+                ],
+                "correct_index": 0,
+                "answer_idx": 0,
+                "explanation": "For loops iterate over predefined sequences or ranges, while while loops execute as long as their conditional expression remains true.",
+                "narration": "What is the primary difference between a Python for loop and a while loop?",
+                "mood": "happy",
+            },
+        ],
+    },
+    "binary_search": {
+        "title": "Binary Search: 2-Minute Algorithm Masterclass",
+        "level": "beginner",
+        "language": "en",
+        "scenes": [
+            {
+                "type": "title_card",
+                "heading": "Binary Search: The Power of O(log n)",
+                "narration": "Welcome to this deep dive on binary search. Instead of inspecting elements one by one, binary search repeatedly cuts the search territory in half, finding items in sorted datasets with logarithmic speed.",
+                "mood": "happy",
+            },
+            {
+                "type": "diagram",
+                "heading": "Step 1: The Divide and Conquer Intuition",
+                "items": [
+                    "1. Find the middle element index",
+                    "2. Compare middle value with target",
+                    "3. Target smaller? Discard entire right half",
+                    "4. Target larger? Discard entire left half",
+                ],
+                "narration": "Imagine flipping open a huge dictionary to the exact center. If your target word comes earlier in alphabetical order, you instantly discard the second half of the book and continue searching only the first half.",
+                "mood": "thinking",
+            },
+            {
+                "type": "code_walkthrough",
+                "heading": "Step 2: Binary Search Implementation",
+                "code": "def binary_search(arr, target):\n    low, high = 0, len(arr) - 1\n    while low <= high:\n        mid = (low + high) // 2\n        if arr[mid] == target:\n            return mid\n        elif arr[mid] < target:\n            low = mid + 1\n        else:\n            high = mid - 1\n    return -1",
+                "highlight_lines": [3, 4, 5],
+                "narration": "Here is the textbook algorithm in Python. We establish two pointers, low and high. At each iteration, we calculate the middle index and shift either the low or high pointer depending on the comparison.",
+                "mood": "curious",
+            },
+            {
+                "type": "diagram",
+                "heading": "Step 3: Concrete Step-by-Step Search Trace",
+                "items": [
+                    "Array: [3, 8, 14, 21, 29, 37, 45], Target: 37",
+                    "Pass 1: Mid index 3 value 21 < 37 -> search right half",
+                    "Pass 2: Sub-array [29, 37, 45], Mid index 5 value 37 == 37",
+                    "Target found at index 5 in just two comparisons!",
+                ],
+                "narration": "Tracing this step by step: in an array of seven items looking for thirty-seven, the middle value is twenty-one. Since thirty-seven is larger, the left half vanishes. On the next check, we land directly on index five.",
+                "mood": "excited",
+            },
+            {
+                "type": "diagram",
+                "heading": "Step 4: Complexity and Preconditions",
+                "items": [
+                    "Precondition: Data MUST be sorted before binary search",
+                    "Time Complexity: O(log n) vs O(n) for linear search",
+                    "Scale: Searching 1 million items takes at most 20 steps",
+                    "Space Complexity: O(1) iterative memory overhead",
+                ],
+                "narration": "The efficiency advantage is astronomical. In a list of one million elements, a linear search could take up to a million checks, while binary search guarantees an answer in at most twenty comparisons.",
+                "mood": "thinking",
+            },
+            {
+                "type": "quiz",
+                "heading": "Binary Search Knowledge Check",
+                "question": "What is the non-negotiable prerequisite before applying binary search to an array?",
+                "options": [
+                    "The elements in the array must be sorted in ascending order",
+                    "The array length must be an exact power of two",
+                    "The elements must only consist of positive integer numbers",
+                ],
+                "correct_index": 0,
+                "answer_idx": 0,
+                "explanation": "Binary search relies strictly on sorted order to determine which half of the dataset can be discarded safely at each step.",
+                "narration": "What is the non-negotiable prerequisite before applying binary search to an array?",
+                "mood": "happy",
+            },
+        ],
+    },
+}
+
+
+def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> dict:
     clean_topic = topic.strip().title()
+
+    if target_seconds >= 100:
+        return {
+            "title": f"Mastering {clean_topic}: Complete Guide",
+            "level": level,
+            "language": "en",
+            "scenes": [
+                {
+                    "type": "title_card",
+                    "heading": f"Comprehensive Guide to {clean_topic}",
+                    "narration": f"Welcome to this comprehensive lesson on {clean_topic}. Today we will explore the core mental model, trace how data moves through memory, and write robust Python code to master this topic.",
+                    "mood": "happy",
+                },
+                {
+                    "type": "diagram",
+                    "heading": f"Step 1: Core Architecture of {clean_topic}",
+                    "items": [
+                        f"1. Core foundations and motivation for {clean_topic}",
+                        "2. Execution flow and memory state transitions",
+                        "3. Best practices, edge cases, and performance tips",
+                    ],
+                    "narration": f"Let us break down {clean_topic} into three foundational pillars. First, understanding why computer scientists created this mechanism. Second, tracing how the system operates under the hood. And third, applying it to real software.",
+                    "mood": "thinking",
+                },
+                {
+                    "type": "code_walkthrough",
+                    "heading": f"Step 2: Practical Code Implementation",
+                    "code": f"# Fundamental demonstration of {clean_topic}\ndataset = [12, 24, 36, 48]\nprocessed = [item * 2 for item in dataset]\nprint('Transformed output values:', processed)",
+                    "highlight_lines": [2, 3],
+                    "narration": f"Here is clean, idiomatic Python code illustrating {clean_topic}. We initialize our baseline data structure, apply the transformation logic step by step, and verify the resulting output in memory.",
+                    "mood": "curious",
+                },
+                {
+                    "type": "diagram",
+                    "heading": "Step 3: Visual Execution & Data Flow",
+                    "items": [
+                        "Input variables mapped in memory",
+                        "Processing pipeline executes sequentially",
+                        "Intermediate state verified without mutation",
+                        "Final results returned cleanly",
+                    ],
+                    "narration": "Watch the execution pipeline. Each input value is mapped in memory, processed through the core logic, and validated before emitting the final output without unexpected side effects.",
+                    "mood": "excited",
+                },
+                {
+                    "type": "code_walkthrough",
+                    "heading": "Step 4: Handling Edge Cases & Optimization",
+                    "code": f"def safe_process(data):\n    if not data:\n        return []\n    return [x for x in data if x > 0]\n\nprint('Safe result:', safe_process([10, -5, 20]))",
+                    "highlight_lines": [2, 3, 4],
+                    "narration": "Professional code must always handle edge cases. Here we guard against empty inputs, filter unexpected negative values, and ensure our program never crashes unexpectedly in production environments.",
+                    "mood": "thinking",
+                },
+                {
+                    "type": "quiz",
+                    "heading": f"{clean_topic} Knowledge Check",
+                    "question": f"What is the primary advantage of understanding {clean_topic} deeply?",
+                    "options": [
+                        "It empowers you to write clean, predictable, and robust production code",
+                        "It completely eliminates the need for underlying computer hardware",
+                        "It only functions when executing Python programs in debug mode",
+                    ],
+                    "correct_index": 0,
+                    "answer_idx": 0,
+                    "explanation": f"Understanding {clean_topic} gives you direct mastery over program structure, performance, and correctness.",
+                    "narration": f"What is the primary advantage of understanding {clean_topic} deeply?",
+                    "mood": "happy",
+                },
+            ],
+        }
+
     return {
         "title": f"Mastering {clean_topic}",
         "level": level,
@@ -254,9 +468,9 @@ def _build_generic_lesson(topic: str, level: str) -> dict:
                 "heading": f"{clean_topic} Knowledge Check",
                 "question": f"What is the primary advantage of understanding {clean_topic} in programming?",
                 "options": [
-                    "A) It allows writing cleaner, more efficient, and predictable code",
-                    "B) It eliminates the need for computer hardware",
-                    "C) It only applies to numerical calculations",
+                    "It allows writing cleaner, more efficient, and predictable code",
+                    "It eliminates the need for computer hardware",
+                    "It only applies to numerical calculations",
                 ],
                 "correct_index": 0,
                 "answer_idx": 0,
@@ -268,20 +482,28 @@ def _build_generic_lesson(topic: str, level: str) -> dict:
     }
 
 
-def get_fallback_lesson(topic: str = "Python Loops", level: str = "beginner") -> Lesson:
+def get_fallback_lesson(topic: str = "Python Loops", level: str = "beginner", target_seconds: int = 60) -> Lesson:
     """Return a topic-specific, verified lesson. Never returns an unrelated topic."""
     t_lower = topic.lower()
 
-    if any(k in t_lower for k in ("binary", "search")):
-        template = CURATED_TOPICS["binary_search"]
-    elif any(k in t_lower for k in ("variable", "memory", "pointer")):
-        template = CURATED_TOPICS["variables"]
-    elif any(k in t_lower for k in ("recursion", "recursive", "call stack", "stack")):
-        template = CURATED_TOPICS["recursion"]
-    elif any(k in t_lower for k in ("loop", "for", "while", "iteration")):
-        template = CURATED_TOPICS["loops"]
+    if target_seconds >= 100:
+        if any(k in t_lower for k in ("loop", "for", "while", "iteration", "range")):
+            template = CURATED_2MIN_TOPICS["loops"]
+        elif any(k in t_lower for k in ("binary", "search", "divide")):
+            template = CURATED_2MIN_TOPICS["binary_search"]
+        else:
+            template = _build_generic_lesson(topic, level, target_seconds=target_seconds)
     else:
-        template = _build_generic_lesson(topic, level)
+        if any(k in t_lower for k in ("binary", "search")):
+            template = CURATED_TOPICS["binary_search"]
+        elif any(k in t_lower for k in ("variable", "memory", "pointer")):
+            template = CURATED_TOPICS["variables"]
+        elif any(k in t_lower for k in ("recursion", "recursive", "call stack", "stack")):
+            template = CURATED_TOPICS["recursion"]
+        elif any(k in t_lower for k in ("loop", "for", "while", "iteration")):
+            template = CURATED_TOPICS["loops"]
+        else:
+            template = _build_generic_lesson(topic, level, target_seconds=target_seconds)
 
     lesson_dict = json.loads(json.dumps(template))
     lesson_dict["level"] = level

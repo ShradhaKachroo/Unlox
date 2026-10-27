@@ -65,15 +65,23 @@ def _count_lesson_words(lesson: Lesson) -> int:
 
 def compute_scene_count(target_seconds: int) -> int:
     """Teaching scenes + 1 quiz.
-    Optimal for phi3.5 on CPU: 3 to 5 scenes.
-    Keeps generation fast (20-35s) and avoids token repeat loops.
+    Scaled for target duration:
+    - 30-45s: 3 scenes (~15s each)
+    - 46-75s: 4 scenes (~18s each)
+    - 76-105s: 5 scenes (~20s each)
+    - 106-135s (2 min): 6 scenes (~20s each)
+    - >135s: 7 scenes
     """
     if target_seconds <= 45:
         return 3   # 2 teaching + quiz
     elif target_seconds <= 75:
         return 4   # 3 teaching + quiz
-    else:
+    elif target_seconds <= 105:
         return 5   # 4 teaching + quiz
+    elif target_seconds <= 135:
+        return 6   # 5 teaching + quiz
+    else:
+        return 7   # 6 teaching + quiz
 
 
 
@@ -108,7 +116,7 @@ def get_system_prompt(
     else:
         scene_count = max(3, min(10, scene_count))
     word_budget = compute_word_budget(target_seconds, picked_language, budget_factor, scene_count=scene_count)
-    words_per_scene = max(20, int(round(word_budget / scene_count)))
+    words_per_scene = max(25, int(round(word_budget / scene_count)))
 
     level_rule = LEVEL_RULES.get(level, LEVEL_RULES["beginner"])
     simpler_rule = SIMPLER_RULES if simpler else ""
@@ -123,7 +131,7 @@ def get_system_prompt(
     )
 
     narration_hint = (
-        "Write 3 to 4 clear, thorough sentences per scene narration (about 35–45 words per scene). "
+        f"Write 3 to 5 clear, thorough sentences per scene narration (target {words_per_scene - 5} to {words_per_scene + 5} words per scene, totaling ~{word_budget} words). "
         "Explain step-by-step with practical intuition, clear logic, and code walkthrough details so the learner has time to absorb the visual animations."
     )
 
@@ -216,11 +224,13 @@ def plan_lesson(
         scene_count=scene_count,
     )
 
-    min_wpsc = max(25, int(round(word_budget / scene_count)))
+    words_per_scene = max(25, int(round(word_budget / scene_count)))
     user_prompt = (
         f"Create an engaging visual lesson for topic: '{topic}'. Level: {level}. "
+        f"Target duration is {target_seconds} seconds (~{target_seconds // 60}m {target_seconds % 60}s). "
         f"Output exactly {scene_count} scenes total (the last scene must be a quiz). "
-        "Explain step-by-step with practical intuition and clean Python code."
+        f"Write thorough, informative narration (~{words_per_scene} words per scene, totaling ~{word_budget} words across the lesson) "
+        "explaining step-by-step with practical intuition, clear logic, diagrams, and clean Python code."
     )
 
     messages = [
@@ -242,7 +252,7 @@ def plan_lesson(
                     "temperature": 0.35,
                     "repeat_penalty": 1.15,
                     "repeat_last_n": 64,
-                    "num_ctx": 2048,
+                    "num_ctx": 4096,
                     "num_thread": 8,
                     "keep_alive": "10m",
                 },
@@ -289,4 +299,4 @@ def plan_lesson(
                 continue
 
     print(f"[planner] all attempts failed, generating verified lesson for '{topic}'")
-    return get_fallback_lesson(topic=topic, level=level), "fallback"
+    return get_fallback_lesson(topic=topic, level=level, target_seconds=target_seconds), "fallback"
