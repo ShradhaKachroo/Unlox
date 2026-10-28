@@ -1,7 +1,5 @@
-"""Translate narrations to hi or kn using NLLB-200.
-Design rule: headings, code, diagram items, and quiz text stay in English.
-Only narration (voice text) is translated.
-Translation of each (text, language) pair is cached in memory.
+"""Multilingual neural translation using Meta's NLLB-200 (600M distilled).
+Translates spoken narration and slide text while preserving protected programming terms.
 """
 import re
 from typing import Optional
@@ -37,12 +35,8 @@ _model: Optional[object] = None
 def _load():
     global _tok, _model
     if _model is None:
-        try:
-            _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn", local_files_only=True)
-            _model = AutoModelForSeq2SeqLM.from_pretrained(NAME, local_files_only=True)
-        except Exception:
-            _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn")
-            _model = AutoModelForSeq2SeqLM.from_pretrained(NAME)
+        _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn")
+        _model = AutoModelForSeq2SeqLM.from_pretrained(NAME)
     return _tok, _model
 
 
