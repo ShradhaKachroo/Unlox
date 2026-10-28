@@ -350,7 +350,7 @@ CURATED_2MIN_TOPICS = {
 }
 
 
-def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> dict:
+def _build_generic_lesson(topic: str, level: str, target_seconds: int = 90) -> dict:
     clean_topic = topic.strip().title()
     t_lower = topic.lower()
     is_coding = any(k in t_lower for k in (
@@ -615,7 +615,7 @@ def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> d
     }
 
 
-def get_fallback_lesson(topic: str = "Python Loops", level: str = "beginner", target_seconds: int = 60) -> Lesson:
+def get_fallback_lesson(topic: str = "Python Loops", level: str = "beginner", target_seconds: int = 90) -> Lesson:
     """Return a topic-specific, verified lesson. Never returns an unrelated topic."""
     t_lower = topic.lower()
 

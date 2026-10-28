@@ -23,7 +23,7 @@ from translate import translate_lesson, translate_text
 from tts import HERE, SUPPORTED, build_timing
 
 # ── Prompt version: bump whenever planner prompt changes ──────────────────────
-PROMPT_VERSION = 7  # Phase 7: monotonic progression between distinct concepts & anti-repeat audio loop fix
+PROMPT_VERSION = 8  # Phase 8: calibrated word budget & dynamic pacing to meet selected target runtime
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 OUT_DIR = os.path.join(HERE, "out")
@@ -181,7 +181,7 @@ def _save_lesson_bundle(lesson_id: str, lesson_obj: Lesson, lang: str, timing: d
     return lesson_dict
 
 
-def _generate_lang_voice(lesson_id: str, lesson_lang: Lesson, lang: str, voice: str) -> tuple[dict, dict]:
+def _generate_lang_voice(lesson_id: str, lesson_lang: Lesson, lang: str, voice: str, target_seconds: Optional[int] = None) -> tuple[dict, dict]:
     """Generate audio files into dedicated language folder out/lessons/<lesson_id>/<lang>/audio/ and legacy dir."""
     _lang_audio_dir(lesson_id, lang)
     modular_audio_out = os.path.join("out", "lessons", lesson_id, lang, "audio")
@@ -195,6 +195,7 @@ def _generate_lang_voice(lesson_id: str, lesson_lang: Lesson, lang: str, voice: 
         scene_lang_suffix=lang,
         audio_url_fn=lambda i: _audio_url(lesson_id, i, lang),
         audio_filename_fn=lambda i: f"scene_{i}.wav",
+        target_seconds=target_seconds,
     )
 
     # Save timing.json at language root
@@ -239,7 +240,7 @@ def _bg_worker():
         item = _bg_queue.get()
         if item is None:
             break
-        lesson_id, lesson_en, language, voice = item
+        lesson_id, lesson_en, language, voice, target_sec = item
         with _bg_lock:
             global _bg_current_lesson_id
             if _bg_current_lesson_id != lesson_id:
@@ -264,7 +265,7 @@ def _bg_worker():
                 _bg_queue.task_done()
                 continue
 
-            timing, lesson_dict = _generate_lang_voice(lesson_id, translated, language, voice)
+            timing, lesson_dict = _generate_lang_voice(lesson_id, translated, language, voice, target_seconds=target_sec)
 
             entry = _get_cache()[_voice_cache_key(lesson_id, language)] = {
                 "status": "ready",
@@ -290,7 +291,7 @@ def _ensure_bg_thread():
         _bg_thread.start()
 
 
-def _enqueue_bg(lesson_id: str, lesson_en: Lesson, languages: list[str], voice: str):
+def _enqueue_bg(lesson_id: str, lesson_en: Lesson, languages: list[str], voice: str, target_seconds: Optional[int] = None):
     global _bg_current_lesson_id
     with _bg_lock:
         _bg_current_lesson_id = lesson_id
@@ -303,7 +304,7 @@ def _enqueue_bg(lesson_id: str, lesson_en: Lesson, languages: list[str], voice: 
             break
     for lang in languages:
         _get_cache()[_voice_cache_key(lesson_id, lang)] = {"status": "pending"}
-        _bg_queue.put((lesson_id, lesson_en, lang, voice))
+        _bg_queue.put((lesson_id, lesson_en, lang, voice, target_seconds))
     _persist_cache()
 
 
@@ -540,7 +541,7 @@ def generate(req: GenerateRequest):
         print(f"   ⚡ Voice Cache HIT for '{req.topic}' [{target_lang.upper()}] (0.0s)")
     else:
         t = time.time()
-        target_timing, target_lesson_dict = _generate_lang_voice(lesson_id, target_lesson, target_lang, req.voice)
+        target_timing, target_lesson_dict = _generate_lang_voice(lesson_id, target_lesson, target_lang, req.voice, target_seconds=target_sec)
         seconds["voice"] = round(time.time() - t, 1)
         cache[target_voice_key] = {"status": "ready", "timing": target_timing, "lesson": target_lesson_dict}
         _persist_cache()
@@ -583,7 +584,7 @@ def generate(req: GenerateRequest):
     if req.generate_all_voices and pending_to_enqueue:
         _persist_cache()
         _ensure_bg_thread()
-        _enqueue_bg(lesson_id, lesson_en, pending_to_enqueue, req.voice)
+        _enqueue_bg(lesson_id, lesson_en, pending_to_enqueue, req.voice, target_seconds=target_sec)
 
     response = {
         "lesson_id": lesson_id,
@@ -669,7 +670,17 @@ def revoice(req: RevoiceRequest):
     else:
         lesson_lang = _cached_translate_lesson(lesson_en, req.lang)
 
-    timing, lesson_dict = _generate_lang_voice(req.lesson_id, lesson_lang, req.lang, req.voice)
+    target_sec = None
+    manifest_file = os.path.join(_lesson_dir(req.lesson_id), "manifest.json")
+    if os.path.exists(manifest_file):
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                mf = json.load(f)
+                target_sec = int(round(mf.get("languages", {}).get("en", {}).get("total_seconds", 0)))
+        except Exception:
+            pass
+
+    timing, lesson_dict = _generate_lang_voice(req.lesson_id, lesson_lang, req.lang, req.voice, target_seconds=target_sec)
     cache[vk] = {"status": "ready", "timing": timing, "lesson": lesson_dict}
     _persist_cache()
     return lesson_dict

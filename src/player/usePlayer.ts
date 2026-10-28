@@ -234,19 +234,17 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
         }
       }
 
-      // If audio has finished, smoothly transition to next scene once a clean pause has elapsed
+      // If audio is still actively playing and localT reaches scene duration, hold scene until audio finishes
       if (
         audio &&
+        !audio.paused &&
+        !audio.ended &&
         audio.duration &&
-        (audio.ended || audio.currentTime >= audio.duration - 0.08)
+        audio.currentTime < audio.duration - 0.08 &&
+        state.localT >= scene.duration_ms - 40
       ) {
-        const audioEndBufferMs = (audio.duration * 1000) + 700;
-        if (state.localT >= audioEndBufferMs && state.sceneIndex < currentLesson.scenes.length - 1) {
-          const nextSceneStart = getSceneStartTime(currentLesson, state.sceneIndex + 1);
-          if (nextT < nextSceneStart) {
-            nextT = nextSceneStart;
-          }
-        }
+        const maxAllowed = state.sceneStartTime + scene.duration_ms - 20;
+        nextT = Math.min(nextT, maxAllowed);
       }
 
       // Check if end of lesson reached

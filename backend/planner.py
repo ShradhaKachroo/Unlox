@@ -12,7 +12,7 @@ MODEL = "phi3.5"
 MAX_ATTEMPTS = 3
 
 # ── Prompt version (keep in sync with api.py PROMPT_VERSION) ─────────────────
-PROMPT_VERSION = 7
+PROMPT_VERSION = 8
 
 def is_coding_topic(topic: str) -> bool:
     import re
@@ -60,8 +60,8 @@ class PlanLesson(BaseModel):
     scenes: list[PlanScene] = Field(description="Ordered list of visual lesson scenes ending with a quiz")
 
 # ── Words-per-second (calibrated for 0.85x speech rate) ───────────────────────
-WORDS_PER_SEC = {"en": 1.75, "hi": 1.75, "kn": 1.75}
-PAUSE_PER_SCENE = 0.6  # seconds gap after each scene's audio
+WORDS_PER_SEC = {"en": 2.1, "hi": 2.1, "kn": 2.1}
+PAUSE_PER_SCENE = 0.8  # seconds gap after each scene's audio
 
 # ── Level rules ───────────────────────────────────────────────────────────────
 LEVEL_RULES = {
@@ -149,7 +149,7 @@ def compute_word_budget(target_seconds: int, picked_language: str = "en",
 
 def get_system_prompt(
     level: str = "beginner",
-    target_seconds: int = 60,
+    target_seconds: int = 90,
     picked_language: str = "en",
     budget_factor: float = 1.0,
     local_context: bool = False,
@@ -192,7 +192,7 @@ def get_system_prompt(
       "type": "diagram",
       "heading": "Visual Concept Overview",
       "items": ["Point 1: Key intuition", "Point 2: Core pattern", "Point 3: Real-world analogy"],
-      "narration": "Let's first visualize the foundational concept before looking at syntax.",
+      "narration": "Let's first visualize the foundational concept before looking at syntax. Notice how data flows smoothly across each step, allowing the program to process elements sequentially without overhead. This gives you a clear mental model of how the underlying mechanism operates in memory.",
       "mood": "thinking"
     },
     {
@@ -200,7 +200,7 @@ def get_system_prompt(
       "heading": "Code Implementation",
       "code": "x = [1, 2, 3]\\nprint(len(x))",
       "highlight_lines": [1],
-      "narration": "Here is the concise implementation showing how the elements work together.",
+      "narration": "Here is the concise implementation showing how the elements work together. On line one, we initialize the data list, and on line two, we measure its total length. This direct approach ensures predictable execution and optimal performance in practice.",
       "mood": "curious"
     },"""
     else:
@@ -213,14 +213,14 @@ def get_system_prompt(
       "type": "diagram",
       "heading": "Visual Characteristics & Properties",
       "items": ["Perception: Sensors, cameras & microphone inputs", "Reasoning Core: Decision-making neural model", "Action: Actuators, physical robotic motion & outputs"],
-      "narration": "Notice the defining visual characteristics that distinguish this form from others.",
+      "narration": "Notice the defining visual characteristics that distinguish this form from others. Each component works in harmony to process incoming environmental signals and translate them into coordinated actions. Understanding this balance is the key to mastering the topic in real scenarios.",
       "mood": "thinking"
     },
     {
       "type": "diagram",
       "heading": "Everyday Real-World Examples",
       "items": ["Smartphones: Voice assistants like Siri & Alexa", "Transit Systems: Autonomous navigation & airport kiosks", "Smart Warehouses: Automated sorting & inventory robots"],
-      "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday objects.",
+      "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday smart objects. Whether helping you navigate a busy street or automating warehouse logistics, these systems operate reliably in real time to solve practical challenges.",
       "mood": "curious"
     },"""
 
@@ -231,7 +231,7 @@ Output exactly {scene_count} scenes total (including the quiz as the last scene)
 {simpler_rule}
 Rules:
 - Exactly {scene_count} scenes. The LAST scene MUST be type "quiz".
-- "title_card": scene 1 only. Has heading + 1-sentence hook narration.{context_rule}
+- "title_card": scene 1 only. Has heading + engaging 2 to 3 sentence introduction hook narration explaining what we will learn and why it matters.{context_rule}
 {code_instruction}
 - "diagram": MUST have "items" array with 3–4 informative visual cards (15–60 chars each) formatted as 'Short Title: Concise 4-7 word descriptive explanation'. BANNED: NEVER output generic labels like 'Step 1', 'Step 2', or 'Done'. Every card MUST contain specific domain knowledge and meaningful terms related to the topic.
 - "quiz" (LAST scene only): {{
@@ -239,7 +239,7 @@ Rules:
     "options": exactly 3–4 realistic, distinct choices (1 correct, 2–3 plausible distractors), 10–100 chars each. NEVER use generic placeholder text like 'Option 1',
     "correct_index": valid 0-based integer matching the correct option,
     "explanation": 1 concise sentence explaining why the correct answer is right, max 150 chars,
-    "narration": reads the question aloud (same as question text)
+    "narration": reads the challenge question aloud followed by a short encouraging prompt (e.g. 'Review the options carefully and choose the correct answer before time is up.')
   }}{prev_q_rule}
 - "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual diagram steps or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
 - PROGRESSION RULE: Each scene MUST advance to a completely new, distinct aspect or stage of the topic. DO NOT dwell on or repeat the same concept across multiple slides. Scene 1 hooks the learner -> Scene 2 introduces the fundamental concept -> Scene 3 moves forward to distinct variations or deeper mechanics -> Scene 4 explores everyday real-world examples -> Quiz tests mastery. Every slide MUST move forward to the next concept!
@@ -278,7 +278,7 @@ def plan_lesson(
     topic: str,
     level: str = "beginner",
     local_context: bool = False,
-    target_seconds: int = 60,
+    target_seconds: int = 90,
     picked_language: str = "en",
     budget_factor: float = 1.0,
     simpler: bool = False,

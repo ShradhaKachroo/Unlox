@@ -152,28 +152,41 @@ def build_timing(
     audio_filename_fn: Optional[Callable[[int], str]] = None,
     speed: float = SPEECH_SPEED,
     pause: float = PAUSE,
+    target_seconds: Optional[int] = None,
 ) -> dict:
     """Generate audio for each scene, return timing dict.
 
     Audio files: out/<out_dir>/scene_<i>_<lang>.wav or custom filename.
-    Each scene: duration = audio_seconds + PAUSE.
+    Each scene duration accommodates audio + pause + target pacing dwell time.
     """
     out_path = os.path.join(HERE, out_dir)
     os.makedirs(out_path, exist_ok=True)
 
     lang_sfx = scene_lang_suffix or language
     prefix = file_prefix or language
+    num_scenes = len(lesson.scenes)
 
-    scenes_timing = []
-    t = 0.0
-    print(f"\n🎙️ [TTS] Synthesizing speech ({language.upper()} / {voice}) for {len(lesson.scenes)} scenes...")
+    raw_scenes_data = []
+    print(f"\n🎙️ [TTS] Synthesizing speech ({language.upper()} / {voice}) for {num_scenes} scenes...")
     for i, scene in enumerate(lesson.scenes):
         audio_name = audio_filename_fn(i) if audio_filename_fn else f"scene_{i}_{lang_sfx}.wav"
         wav = os.path.join(out_path, audio_name)
         audio_seconds = make_audio(scene.narration, wav, language=language, voice_gender=voice, speed=speed)
-        duration = round(audio_seconds + pause, 3)
+        raw_duration = round(audio_seconds + pause, 3)
+        raw_scenes_data.append((i, scene, audio_name, audio_seconds, raw_duration))
+
+    raw_total = sum(d for _, _, _, _, d in raw_scenes_data)
+    extra_per_scene = 0.0
+    if target_seconds and target_seconds > raw_total and num_scenes > 0:
+        extra_per_scene = round((target_seconds - raw_total) / num_scenes, 3)
+        print(f"   ⏱️ [TTS] Pacing alignment: adding {extra_per_scene:.2f}s visual dwell per scene to reach {target_seconds}s target")
+
+    scenes_timing = []
+    t = 0.0
+    for i, scene, audio_name, audio_seconds, raw_duration in raw_scenes_data:
+        duration = round(raw_duration + extra_per_scene, 3)
         scene_title = (getattr(scene, "heading", None) or f"Scene {i}")[:40]
-        print(f"   • Scene {i} [{scene.type}]: '{scene_title}' -> audio {audio_seconds:.2f}s (scene duration: {duration:.2f}s)")
+        print(f"   • Scene {i} [{scene.type}]: '{scene_title}' -> audio {audio_seconds:.2f}s (scene display duration: {duration:.2f}s)")
 
         audio_url = (
             audio_url_fn(i) if audio_url_fn

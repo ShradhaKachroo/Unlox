@@ -16,17 +16,17 @@ interface InputPageProps {
 
 const TOPIC_PRESETS: Array<{ label: string; topic: string; category: string; sec: number; level: Level }> = [
   { label: 'Python For Loops', topic: 'Python For Loops and Iteration', category: 'Python', sec: 90, level: 'beginner' },
-  { label: 'Binary Search', topic: 'Binary Search in Arrays', category: 'DSA', sec: 120, level: 'beginner' },
+  { label: 'Binary Search', topic: 'Binary Search in Arrays', category: 'DSA', sec: 90, level: 'beginner' },
   { label: 'Variables & Memory', topic: 'Variables and Memory in Python', category: 'Python', sec: 45, level: 'beginner' },
-  { label: 'Recursion Stacks', topic: 'Recursion and Call Stacks', category: 'DSA', sec: 120, level: 'intermediate' },
-  { label: 'AsyncIO & Event Loop', topic: 'AsyncIO and Event Loop Architecture', category: 'Internals', sec: 120, level: 'advanced' },
+  { label: 'Recursion Stacks', topic: 'Recursion and Call Stacks', category: 'DSA', sec: 90, level: 'intermediate' },
+  { label: 'AsyncIO & Event Loop', topic: 'AsyncIO and Event Loop Architecture', category: 'Internals', sec: 90, level: 'advanced' },
   { label: 'Bubble Sort Swapping', topic: 'Bubble Sort and Swapping Logic', category: 'DSA', sec: 90, level: 'beginner' },
 ];
 
 const DURATION_PRESETS = [
-  { sec: 45, label: '45s', desc: 'Fast Overview' },
+  { sec: 45, label: '45s', desc: 'Quick Recap' },
+  { sec: 60, label: '60s', desc: '1-Min Summary' },
   { sec: 90, label: '90s', desc: 'Standard Lesson' },
-  { sec: 105, label: '105s', desc: 'In-Depth' },
   { sec: 120, label: '120s', desc: 'Full Deep Dive' },
 ];
 

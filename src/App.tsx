@@ -32,7 +32,7 @@ export const App: React.FC = () => {
 
   // Topic & duration passed from Study Plan into Input Page
   const [selectedTopic, setSelectedTopic] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState(120);
+  const [selectedDuration, setSelectedDuration] = useState(90);
 
   // Initialize with sample lesson only if player/capture is explicitly requested
   useEffect(() => {
