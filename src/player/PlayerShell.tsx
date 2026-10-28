@@ -382,7 +382,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         className="player-header"
         style={{
           height: '60px',
-          padding: '0 20px',
+          padding: '0 18px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -392,10 +392,12 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           zIndex: 20,
           flexShrink: 0,
           boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
+          overflow: 'hidden',
+          gap: '12px',
         }}
       >
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
           {onBackToInput && (
             <button
               id="btn-back-input"
@@ -415,6 +417,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                 gap: '6px',
                 flexShrink: 0,
                 boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+                whiteSpace: 'nowrap',
               }}
               title="Return to lesson creator"
             >
@@ -423,85 +426,89 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             </button>
           )}
 
-          <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-              <span
-                className="player-header-title"
-                style={{
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  color: 'var(--text-main, #0f172a)',
-                  letterSpacing: '-0.01em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                {lesson.title}
-              </span>
+          <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: '8px', overflow: 'hidden' }}>
+            <span
+              className="player-header-title"
+              style={{
+                fontSize: '15px',
+                fontWeight: 700,
+                color: 'var(--text-main, #0f172a)',
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                maxWidth: '220px',
+                flexShrink: 1,
+              }}
+              title={lesson.title}
+            >
+              {lesson.title}
+            </span>
+            <span
+              className="player-header-badge"
+              style={{
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: 'rgba(2, 132, 199, 0.1)',
+                color: '#0284c7',
+                border: '1px solid rgba(2, 132, 199, 0.22)',
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+              }}
+            >
+              {langInfo.flag} {langInfo.name}
+            </span>
+            {statusBadge && (
               <span
                 className="player-header-badge"
                 style={{
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(2, 132, 199, 0.1)',
-                  color: '#0284c7',
-                  border: '1px solid rgba(2, 132, 199, 0.22)',
+                  background: '#ecfdf5',
+                  color: '#059669',
+                  border: '1px solid #a7f3d0',
                   fontSize: '11px',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
+                  fontWeight: 600,
                   whiteSpace: 'nowrap',
+                  flexShrink: 0,
                 }}
               >
-                {langInfo.name} ({langInfo.nativeName})
+                {statusBadge}
               </span>
-              {statusBadge && (
-                <span
-                  className="player-header-badge"
-                  style={{
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: '#ecfdf5',
-                    color: '#059669',
-                    border: '1px solid #a7f3d0',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {statusBadge}
-                </span>
-              )}
-              {/* Voice Track Indicator Badge */}
-              <span
-                id="voice-badge"
-                style={{
-                  padding: '2px 8px',
-                  borderRadius: '4px',
-                  background: currentScene?.audio_url
-                    ? isPlaying && !isMuted
-                      ? 'rgba(2, 132, 199, 0.12)'
-                      : '#f1f5f9'
-                    : '#fef2f2',
-                  color: currentScene?.audio_url
-                    ? isPlaying && !isMuted
-                      ? '#0284c7'
-                      : '#64748b'
-                    : '#ef4444',
-                  border: `1px solid ${currentScene?.audio_url ? '#cbd5e1' : '#fecaca'}`,
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  whiteSpace: 'nowrap',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                }}
-                title={currentScene?.audio_url ? `Audio source: ${currentScene.audio_url}` : 'No audio file'}
-              >
-                <span>{currentScene?.audio_url ? (isMuted ? '🔇' : isPlaying ? '🎙️' : '🔈') : '⚠️'}</span>
-                <span>{currentScene?.audio_url ? (isPlaying && !isMuted ? 'Voice Playing' : 'Voice Ready') : 'No Audio'}</span>
-              </span>
-            </div>
+            )}
+            {/* Voice Track Indicator Badge */}
+            <span
+              id="voice-badge"
+              style={{
+                padding: '2px 8px',
+                borderRadius: '4px',
+                background: currentScene?.audio_url
+                  ? isPlaying && !isMuted
+                    ? 'rgba(2, 132, 199, 0.12)'
+                    : '#f1f5f9'
+                  : '#fef2f2',
+                color: currentScene?.audio_url
+                  ? isPlaying && !isMuted
+                    ? '#0284c7'
+                    : '#64748b'
+                  : '#ef4444',
+                border: `1px solid ${currentScene?.audio_url ? '#cbd5e1' : '#fecaca'}`,
+                fontSize: '11px',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+                flexShrink: 0,
+              }}
+              title={currentScene?.audio_url ? `Audio source: ${currentScene.audio_url}` : 'No audio file'}
+            >
+              <span>{currentScene?.audio_url ? (isMuted ? '🔇' : isPlaying ? '🎙️' : '🔈') : '⚠️'}</span>
+              <span>{currentScene?.audio_url ? (isPlaying && !isMuted ? 'Voice Playing' : 'Voice Ready') : 'No Audio'}</span>
+            </span>
           </div>
         </div>
 
@@ -510,24 +517,40 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             flexShrink: 0,
+            minWidth: 0,
           }}
         >
           <div
             id="step-heading"
             className="player-header-scene"
             style={{
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 600,
               color: '#64748b',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              whiteSpace: 'nowrap',
+              maxWidth: '260px',
+              overflow: 'hidden',
             }}
+            title={`Scene ${currentSceneNumber}/${sceneCount}: ${currentScene?.heading || 'Intro'}`}
           >
-            <span>Scene {currentSceneNumber}/{sceneCount}:</span>
-            <span style={{ color: '#0284c7', fontWeight: 700 }}>
+            <span style={{ flexShrink: 0 }}>Scene {currentSceneNumber}/{sceneCount}:</span>
+            <span
+              style={{
+                color: '#0284c7',
+                fontWeight: 700,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '170px',
+                display: 'inline-block',
+                verticalAlign: 'middle',
+              }}
+            >
               {currentScene?.heading || 'Intro'}
             </span>
           </div>
@@ -542,6 +565,8 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               fontWeight: 700,
               color: '#0284c7',
               boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}
           >
             {Math.round(localT / 1000)}s / {Math.round(sceneDuration / 1000)}s
@@ -624,6 +649,30 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         </div>
       </header>
 
+      {/* Dedicated Revoice / Voice Synthesizing Notification Banner */}
+      {revoiceStatus && (
+        <div
+          id="revoice-status-bar"
+          style={{
+            width: '100%',
+            background: 'linear-gradient(90deg, #0284c7 0%, #0369a1 100%)',
+            color: '#ffffff',
+            padding: '7px 16px',
+            fontSize: '12px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            zIndex: 15,
+            boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
+          }}
+        >
+          <span style={{ display: 'inline-block', animation: 'spin 1.2s linear infinite' }}>🎙️</span>
+          <span>{revoiceStatus}</span>
+        </div>
+      )}
+
       {/* Subtle Offline / Fallback Notice Chip */}
       {lesson.error && (
         <div
@@ -666,55 +715,25 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             id="voice-ready-toast"
             style={{
               position: 'absolute',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              top: '16px',
+              right: '20px',
               zIndex: 100,
               background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.95) 0%, rgba(5, 150, 105, 0.95) 100%)',
               border: '1.5px solid #34d399',
               borderRadius: '30px',
-              padding: '10px 22px',
+              padding: '8px 18px',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(52, 211, 153, 0.35)',
+              gap: '8px',
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(52, 211, 153, 0.25)',
               backdropFilter: 'blur(10px)',
               color: '#ffffff',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 700,
             }}
           >
-            <span style={{ fontSize: '16px' }}>✨</span>
+            <span style={{ fontSize: '15px' }}>✨</span>
             <span>{readyToast}</span>
-          </div>
-        )}
-
-        {/* Revoice Loading Toast */}
-        {revoiceStatus && (
-          <div
-            id="revoice-loading-toast"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 100,
-              background: 'rgba(15, 23, 42, 0.92)',
-              border: '1.5px solid #0284c7',
-              borderRadius: '30px',
-              padding: '10px 22px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(2, 132, 199, 0.3)',
-              backdropFilter: 'blur(10px)',
-              color: '#38bdf8',
-              fontSize: '13px',
-              fontWeight: 700,
-            }}
-          >
-            <span style={{ fontSize: '16px' }}>🎙️</span>
-            <span>{revoiceStatus}</span>
           </div>
         )}
 
@@ -724,21 +743,20 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             id="revoice-error-toast"
             style={{
               position: 'absolute',
-              top: '20px',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              top: '16px',
+              right: '20px',
               zIndex: 100,
               background: 'rgba(24, 15, 15, 0.95)',
               border: '1.5px solid #ef4444',
               borderRadius: '30px',
-              padding: '10px 22px',
+              padding: '8px 18px',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: '8px',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.6)',
               backdropFilter: 'blur(10px)',
               color: '#f87171',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 700,
             }}
           >
@@ -1443,6 +1461,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         language={lesson.language}
         isOpen={showBot}
         onToggle={() => setShowBot((prev) => !prev)}
+        bottomOffset="105px"
       />
     </div>
   );

@@ -8,6 +8,7 @@ interface AskBluBotProps {
   language?: string;
   isOpen?: boolean;
   onToggle?: () => void;
+  bottomOffset?: string;
 }
 
 interface Message {
@@ -33,6 +34,7 @@ export const AskBluBot: React.FC<AskBluBotProps> = ({
   language = 'en',
   isOpen: controlledIsOpen,
   onToggle: controlledOnToggle,
+  bottomOffset = '24px',
 }) => {
   const [internalIsOpen, setInternalIsOpen] = useState(false);
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen;
@@ -200,7 +202,7 @@ export const AskBluBot: React.FC<AskBluBotProps> = ({
       <div
         style={{
           position: 'fixed',
-          bottom: '24px',
+          bottom: bottomOffset,
           right: '24px',
           zIndex: 9999,
           display: 'flex',
@@ -297,12 +299,12 @@ export const AskBluBot: React.FC<AskBluBotProps> = ({
           aria-label="Blu AI Tutor Chatbot"
           style={{
             position: 'fixed',
-            bottom: '86px',
+            bottom: `calc(${bottomOffset} + 64px)`,
             right: '24px',
             width: '390px',
             maxWidth: 'calc(100vw - 32px)',
             height: '560px',
-            maxHeight: 'calc(100vh - 110px)',
+            maxHeight: `calc(100vh - ${bottomOffset} - 80px)`,
             background: '#ffffff',
             borderRadius: '20px',
             border: '1px solid #e2e8f0',

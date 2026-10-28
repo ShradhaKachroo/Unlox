@@ -164,8 +164,8 @@ export const Controls: React.FC<ControlsProps> = ({
               style={{
                 ...buttonStyle,
                 appearance: 'none',
-                paddingRight: '30px',
-                paddingLeft: '14px',
+                paddingRight: '28px',
+                paddingLeft: '12px',
                 background: isRevoicing ? 'rgba(14, 165, 233, 0.12)' : 'rgba(15, 23, 42, 0.85)',
                 border: isRevoicing ? '1.5px solid rgba(56, 189, 248, 0.8)' : '1.5px solid rgba(56, 189, 248, 0.45)',
                 color: '#38bdf8',
@@ -173,6 +173,8 @@ export const Controls: React.FC<ControlsProps> = ({
                 opacity: isRevoicing ? 0.7 : 1,
                 fontSize: '13px',
                 fontWeight: 700,
+                maxWidth: '220px',
+                textOverflow: 'ellipsis',
               }}
               title="Switch lesson language"
             >
@@ -184,7 +186,7 @@ export const Controls: React.FC<ControlsProps> = ({
                 else if (status === 'pending') statusBadge = '⏳ Queued';
                 return (
                   <option key={lang.code} value={lang.code} style={{ background: '#090d16', color: '#ffffff' }}>
-                    {lang.label} {statusBadge ? `(${statusBadge})` : ''}
+                    {lang.shortLabel || lang.label} {statusBadge ? `(${statusBadge})` : ''}
                   </option>
                 );
               })}

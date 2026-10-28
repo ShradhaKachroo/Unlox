@@ -348,7 +348,8 @@ def plan_lesson(
                     "temperature": 0.35,
                     "repeat_penalty": 1.15,
                     "repeat_last_n": 64,
-                    "num_ctx": 4096,
+                    "num_ctx": 2048,
+                    "num_predict": 900,
                     "num_thread": 8,
                     "keep_alive": "10m",
                 },
@@ -386,14 +387,10 @@ def plan_lesson(
                 continue
 
             print(
-                f"\n✅ [PLANNER] Attempt {attempt} accepted in {elapsed}s!\n"
+                f"\n✅ [PLANNER] Lesson plan generated in {elapsed}s!\n"
                 f"   • Title:  '{lesson.title}'\n"
                 f"   • Scenes: {len(lesson.scenes)} scenes | Total Words: {actual_words}"
             )
-            print("-" * 72)
-            print("📦 [PLANNER] RAW GENERATED LESSON JSON (MASTER PLAN):")
-            print(json.dumps(lesson.model_dump(), indent=2, ensure_ascii=False))
-            print("-" * 72 + "\n")
             return lesson, "llm"
 
         except ValidationError as e:

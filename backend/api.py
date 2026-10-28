@@ -494,10 +494,7 @@ def generate(req: GenerateRequest):
         lesson_en = Lesson.model_validate(cache[plan_key])
         source = "llm"
         seconds["plan"] = 0.0
-        print("-" * 72)
-        print("📦 [WORKFLOW] RAW MASTER LESSON JSON (CACHED PLAN):")
-        print(json.dumps(lesson_en.model_dump(), indent=2, ensure_ascii=False))
-        print("-" * 72 + "\n")
+        print(f"   📦 [WORKFLOW] Loaded cached master lesson '{lesson_en.title}' ({len(lesson_en.scenes)} scenes)")
     else:
         t = time.time()
         lesson_en, source = plan_lesson(
@@ -564,10 +561,7 @@ def generate(req: GenerateRequest):
     print(f"║    • Audio Voice:    {target_lang.upper()} ({req.voice})")
     print("╚" + "═" * 70 + "╝")
 
-    print("\n" + "=" * 72)
-    print("📄 [WORKFLOW] FINAL OUTPUT LESSON JSON (AS IT IS):")
-    print(json.dumps(target_lesson_dict, indent=2, ensure_ascii=False))
-    print("=" * 72 + "\n")
+    print(f"   📄 [WORKFLOW] Saved lesson bundle: out/lessons/{lesson_id}/{target_lang}/lesson.json\n")
 
     # ── 3. Background queue: Queue in English only (if user selected non-English) ──
     bg_langs = ["en"] if target_lang != "en" else []
