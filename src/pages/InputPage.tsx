@@ -24,10 +24,11 @@ const TOPIC_PRESETS: Array<{ label: string; topic: string; category: string; sec
 ];
 
 const DURATION_PRESETS = [
-  { sec: 45, label: '45s', desc: 'Quick Recap' },
-  { sec: 60, label: '60s', desc: '1-Min Summary' },
-  { sec: 90, label: '90s', desc: 'Standard Lesson' },
-  { sec: 120, label: '120s', desc: 'Full Deep Dive' },
+  { sec: 45, label: '45s', desc: 'Fast (4 Slides)' },
+  { sec: 90, label: '90s', desc: 'Standard (6 Slides)' },
+  { sec: 120, label: '120s', desc: 'Detailed (7 Slides)' },
+  { sec: 150, label: '150s', desc: 'In-Depth (8 Slides)' },
+  { sec: 180, label: '180s', desc: 'Masterclass (9 Slides)' },
 ];
 
 export const InputPage: React.FC<InputPageProps> = ({

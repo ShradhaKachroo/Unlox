@@ -12,7 +12,7 @@ MODEL = "phi3.5"
 MAX_ATTEMPTS = 3
 
 # ── Prompt version (keep in sync with api.py PROMPT_VERSION) ─────────────────
-PROMPT_VERSION = 8
+PROMPT_VERSION = 7
 
 def is_coding_topic(topic: str) -> bool:
     import re
@@ -60,8 +60,8 @@ class PlanLesson(BaseModel):
     scenes: list[PlanScene] = Field(description="Ordered list of visual lesson scenes ending with a quiz")
 
 # ── Words-per-second (calibrated for 0.85x speech rate) ───────────────────────
-WORDS_PER_SEC = {"en": 2.1, "hi": 2.1, "kn": 2.1}
-PAUSE_PER_SCENE = 0.8  # seconds gap after each scene's audio
+WORDS_PER_SEC = {"en": 1.75, "hi": 1.75, "kn": 1.75}
+PAUSE_PER_SCENE = 0.6  # seconds gap after each scene's audio
 
 # ── Level rules ───────────────────────────────────────────────────────────────
 LEVEL_RULES = {
@@ -112,23 +112,26 @@ def _count_lesson_words(lesson: Lesson) -> int:
 
 def compute_scene_count(target_seconds: int) -> int:
     """Teaching scenes + 1 quiz.
-    Scaled for target duration:
-    - 30-45s: 3 scenes (~15s each)
-    - 46-75s: 4 scenes (~18s each)
-    - 76-105s: 5 scenes (~20s each)
-    - 106-135s (2 min): 6 scenes (~20s each)
-    - >135s: 7 scenes
+    Scaled for target duration with richer slide breakdown:
+    - 30-45s: 4 scenes (Title + 2 teaching + Quiz)
+    - 46-75s: 5 scenes (Title + 3 teaching + Quiz)
+    - 76-105s (90s): 6 scenes (Title + 4 teaching + Quiz)
+    - 106-135s (120s): 7 scenes (Title + 5 teaching + Quiz)
+    - 136-165s (150s): 8 scenes (Title + 6 teaching + Quiz)
+    - >165s (180s+): 9 scenes (Title + 7 teaching + Quiz)
     """
     if target_seconds <= 45:
-        return 3   # 2 teaching + quiz
-    elif target_seconds <= 75:
         return 4   # 3 teaching + quiz
-    elif target_seconds <= 105:
+    elif target_seconds <= 75:
         return 5   # 4 teaching + quiz
-    elif target_seconds <= 135:
+    elif target_seconds <= 105:
         return 6   # 5 teaching + quiz
-    else:
+    elif target_seconds <= 135:
         return 7   # 6 teaching + quiz
+    elif target_seconds <= 165:
+        return 8   # 7 teaching + quiz
+    else:
+        return 9   # 8 teaching + quiz
 
 
 
@@ -179,8 +182,8 @@ def get_system_prompt(
     )
 
     narration_hint = (
-        f"Write 3 to 5 clear, thorough sentences per scene narration (target {words_per_scene - 5} to {words_per_scene + 5} words per scene, totaling ~{word_budget} words). "
-        "Explain step-by-step with practical intuition, clear logic, and visual clarity so the learner has time to absorb the visual animations."
+        f"Provide comprehensive, high-value spoken teaching explanation for each slide: 3 to 5 clear, substantive sentences per scene narration (target {words_per_scene - 5} to {words_per_scene + 5} words per scene, totaling ~{word_budget} words across the lesson). "
+        "Explain the intuition, technical mechanics, real-world analogies, and practical relevance thoroughly so the learner gains deep understanding."
     )
 
     if is_coding:
@@ -192,7 +195,7 @@ def get_system_prompt(
       "type": "diagram",
       "heading": "Visual Concept Overview",
       "items": ["Point 1: Key intuition", "Point 2: Core pattern", "Point 3: Real-world analogy"],
-      "narration": "Let's first visualize the foundational concept before looking at syntax. Notice how data flows smoothly across each step, allowing the program to process elements sequentially without overhead. This gives you a clear mental model of how the underlying mechanism operates in memory.",
+      "narration": "Let's first visualize the foundational concept before looking at syntax.",
       "mood": "thinking"
     },
     {
@@ -200,7 +203,7 @@ def get_system_prompt(
       "heading": "Code Implementation",
       "code": "x = [1, 2, 3]\\nprint(len(x))",
       "highlight_lines": [1],
-      "narration": "Here is the concise implementation showing how the elements work together. On line one, we initialize the data list, and on line two, we measure its total length. This direct approach ensures predictable execution and optimal performance in practice.",
+      "narration": "Here is the concise implementation showing how the elements work together.",
       "mood": "curious"
     },"""
     else:
@@ -213,14 +216,14 @@ def get_system_prompt(
       "type": "diagram",
       "heading": "Visual Characteristics & Properties",
       "items": ["Perception: Sensors, cameras & microphone inputs", "Reasoning Core: Decision-making neural model", "Action: Actuators, physical robotic motion & outputs"],
-      "narration": "Notice the defining visual characteristics that distinguish this form from others. Each component works in harmony to process incoming environmental signals and translate them into coordinated actions. Understanding this balance is the key to mastering the topic in real scenarios.",
+      "narration": "Notice the defining visual characteristics that distinguish this form from others.",
       "mood": "thinking"
     },
     {
       "type": "diagram",
       "heading": "Everyday Real-World Examples",
       "items": ["Smartphones: Voice assistants like Siri & Alexa", "Transit Systems: Autonomous navigation & airport kiosks", "Smart Warehouses: Automated sorting & inventory robots"],
-      "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday smart objects. Whether helping you navigate a busy street or automating warehouse logistics, these systems operate reliably in real time to solve practical challenges.",
+      "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday objects.",
       "mood": "curious"
     },"""
 
@@ -231,15 +234,15 @@ Output exactly {scene_count} scenes total (including the quiz as the last scene)
 {simpler_rule}
 Rules:
 - Exactly {scene_count} scenes. The LAST scene MUST be type "quiz".
-- "title_card": scene 1 only. Has heading + engaging 2 to 3 sentence introduction hook narration explaining what we will learn and why it matters.{context_rule}
+- "title_card": scene 1 only. Has heading + 1-sentence hook narration.{context_rule}
 {code_instruction}
-- "diagram": MUST have "items" array with 3–4 informative visual cards (15–60 chars each) formatted as 'Short Title: Concise 4-7 word descriptive explanation'. BANNED: NEVER output generic labels like 'Step 1', 'Step 2', or 'Done'. Every card MUST contain specific domain knowledge and meaningful terms related to the topic.
+- "diagram": MUST have "items" array with 3–4 informative, descriptive visual cards (20–70 chars each) formatted as 'Short Title: Concise 4-8 word descriptive explanation'. BANNED: NEVER output generic labels like 'Step 1', 'Step 2', or 'Done'. Every card MUST contain concrete domain knowledge, mechanisms, and real terms.
 - "quiz" (LAST scene only): {{
     "question": one clear conceptual question, max 120 chars,
     "options": exactly 3–4 realistic, distinct choices (1 correct, 2–3 plausible distractors), 10–100 chars each. NEVER use generic placeholder text like 'Option 1',
     "correct_index": valid 0-based integer matching the correct option,
     "explanation": 1 concise sentence explaining why the correct answer is right, max 150 chars,
-    "narration": reads the challenge question aloud followed by a short encouraging prompt (e.g. 'Review the options carefully and choose the correct answer before time is up.')
+    "narration": reads the question aloud (same as question text)
   }}{prev_q_rule}
 - "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual diagram steps or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
 - PROGRESSION RULE: Each scene MUST advance to a completely new, distinct aspect or stage of the topic. DO NOT dwell on or repeat the same concept across multiple slides. Scene 1 hooks the learner -> Scene 2 introduces the fundamental concept -> Scene 3 moves forward to distinct variations or deeper mechanics -> Scene 4 explores everyday real-world examples -> Quiz tests mastery. Every slide MUST move forward to the next concept!
@@ -348,8 +351,8 @@ def plan_lesson(
                     "temperature": 0.35,
                     "repeat_penalty": 1.15,
                     "repeat_last_n": 64,
-                    "num_ctx": 2048,
-                    "num_predict": 900,
+                    "num_ctx": 4096,
+                    "num_predict": 2048,
                     "num_thread": 8,
                     "keep_alive": "10m",
                 },
