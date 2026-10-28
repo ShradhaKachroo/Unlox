@@ -166,11 +166,14 @@ def build_timing(
 
     scenes_timing = []
     t = 0.0
+    print(f"\n🎙️ [TTS] Synthesizing speech ({language.upper()} / {voice}) for {len(lesson.scenes)} scenes...")
     for i, scene in enumerate(lesson.scenes):
         audio_name = audio_filename_fn(i) if audio_filename_fn else f"scene_{i}_{lang_sfx}.wav"
         wav = os.path.join(out_path, audio_name)
         audio_seconds = make_audio(scene.narration, wav, language=language, voice_gender=voice, speed=speed)
         duration = round(audio_seconds + pause, 3)
+        scene_title = (getattr(scene, "heading", None) or f"Scene {i}")[:40]
+        print(f"   • Scene {i} [{scene.type}]: '{scene_title}' -> audio {audio_seconds:.2f}s (scene duration: {duration:.2f}s)")
 
         audio_url = (
             audio_url_fn(i) if audio_url_fn
@@ -191,6 +194,7 @@ def build_timing(
         t += duration
 
     total = round(t, 3)
+    print(f"⏱️ [TTS] Synthesis complete! Total Lesson Duration: {total:.2f}s across {len(scenes_timing)} scenes")
     timing = {
         "language": language,
         "voice": voice,

@@ -477,13 +477,27 @@ def generate(req: GenerateRequest):
 
     target_lang = req.language if req.language in SUPPORTED else "en"
 
+    print("\n" + "╔" + "═" * 70 + "╗")
+    print(f"║ 🚀 [WORKFLOW] NEW LESSON GENERATION PIPELINE INITIATED")
+    print(f"║    • Topic:         '{req.topic}'")
+    print(f"║    • Level:         {req.level.upper()}")
+    print(f"║    • Language:      {target_lang.upper()} | Voice: {req.voice}")
+    print(f"║    • Target Length: {target_sec}s ({req_scene_count or 'auto'} scenes)")
+    print(f"║    • Lesson ID:     {lesson_id}")
+    print("╚" + "═" * 70 + "╝")
+
     # ── 1. Plan (English, cached) ─────────────────────────────────────────────
     plan_hit = plan_key in cache
+    print(f"\n🧠 [WORKFLOW] [Step 1/4] Planning English Master Lesson...")
     if plan_hit:
-        print(f"[generate] plan cache hit for '{req.topic}' [{req.level}]")
+        print(f"   ⚡ Plan Cache HIT for '{req.topic}' [{req.level.upper()}] (0.0s)")
         lesson_en = Lesson.model_validate(cache[plan_key])
         source = "llm"
         seconds["plan"] = 0.0
+        print("-" * 72)
+        print("📦 [WORKFLOW] RAW MASTER LESSON JSON (CACHED PLAN):")
+        print(json.dumps(lesson_en.model_dump(), indent=2, ensure_ascii=False))
+        print("-" * 72 + "\n")
     else:
         t = time.time()
         lesson_en, source = plan_lesson(
@@ -500,6 +514,7 @@ def generate(req: GenerateRequest):
         if source != "fallback":
             cache[plan_key] = lesson_en.model_dump()
             _persist_cache()
+        print(f"   ✓ [Step 1/4] Master lesson plan created in {seconds['plan']}s")
 
     # Save canonical master lesson in out/lessons/<lesson_id>/
     lesson_root = _lesson_dir(lesson_id)
@@ -508,32 +523,51 @@ def generate(req: GenerateRequest):
 
     # ── 2. Generate voice in user's SELECTED language for immediate playback ───
     if target_lang != "en":
+        print(f"\n🌐 [WORKFLOW] [Step 2/4] Translating lesson content into '{target_lang}'...")
         target_lesson = _cached_translate_lesson(lesson_en, target_lang)
+        print(f"   ✓ [Step 2/4] Translated title: '{target_lesson.title}'")
     else:
+        print(f"\n🌐 [WORKFLOW] [Step 2/4] Language is English (no translation needed)")
         target_lesson = lesson_en
 
     target_voice_key = _voice_cache_key(lesson_id, target_lang)
     target_voice_hit = target_voice_key in cache and cache[target_voice_key].get("status") == "ready"
     target_lang_file = os.path.join(OUT_DIR, "lessons", lesson_id, target_lang, "lesson.json")
 
+    print(f"\n🎙️ [WORKFLOW] [Step 3/4] Synthesizing speech audio & generating timing alignment...")
     if os.path.exists(target_lang_file) and target_voice_hit:
         with open(target_lang_file, "r", encoding="utf-8") as f:
             target_lesson_dict = json.load(f)
         target_timing = cache[target_voice_key]["timing"]
         seconds["voice"] = 0.0
-        print(f"[generate] {target_lang} voice cache hit for '{req.topic}'")
+        print(f"   ⚡ Voice Cache HIT for '{req.topic}' [{target_lang.upper()}] (0.0s)")
     else:
         t = time.time()
         target_timing, target_lesson_dict = _generate_lang_voice(lesson_id, target_lesson, target_lang, req.voice)
         seconds["voice"] = round(time.time() - t, 1)
         cache[target_voice_key] = {"status": "ready", "timing": target_timing, "lesson": target_lesson_dict}
         _persist_cache()
+        print(f"   ✓ [Step 3/4] Audio synthesized in {seconds['voice']}s (Total duration: {target_timing['total_seconds']}s)")
+
+    print(f"\n💾 [WORKFLOW] [Step 4/4] Saved lesson bundle to disk:")
+    print(f"   • lesson.json:   out/lessons/{lesson_id}/{target_lang}/lesson.json")
+    print(f"   • timing.json:   out/lessons/{lesson_id}/{target_lang}/timing.json")
+    print(f"   • manifest.json: out/lessons/{lesson_id}/manifest.json")
 
     total_stage = round(sum(seconds.values()), 1)
-    print(
-        f"[generate] plan: {seconds['plan']}s | {target_lang} voice: {seconds.get('voice', 0)}s | total: {total_stage}s"
-        f" | video: {target_timing['total_seconds']}s"
-    )
+    print("\n" + "╔" + "═" * 70 + "╗")
+    print(f"║ 🎉 [WORKFLOW COMPLETE] LESSON READY IN {total_stage}s!")
+    print(f"║    • Lesson ID:      {lesson_id}")
+    print(f"║    • Title:          '{target_lesson_dict.get('title')}'")
+    print(f"║    • Total Duration: {target_timing['total_seconds']}s")
+    print(f"║    • Total Scenes:   {len(target_lesson_dict.get('scenes', []))}")
+    print(f"║    • Audio Voice:    {target_lang.upper()} ({req.voice})")
+    print("╚" + "═" * 70 + "╝")
+
+    print("\n" + "=" * 72)
+    print("📄 [WORKFLOW] FINAL OUTPUT LESSON JSON (AS IT IS):")
+    print(json.dumps(target_lesson_dict, indent=2, ensure_ascii=False))
+    print("=" * 72 + "\n")
 
     # ── 3. Background queue: Queue in English only (if user selected non-English) ──
     bg_langs = ["en"] if target_lang != "en" else []

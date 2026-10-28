@@ -1,3 +1,4 @@
+import json
 import time
 from typing import Literal, Optional
 
@@ -307,6 +308,15 @@ def plan_lesson(
         f"{explanation_style}"
     )
 
+    print("\n" + "=" * 72)
+    print(f"🧠 [PLANNER] Generating lesson structure with Ollama ({MODEL})")
+    print(f"   • Topic:         '{topic}'")
+    print(f"   • Level:         {level.upper()}")
+    print(f"   • Target Length: {target_seconds}s ({scene_count} scenes)")
+    print(f"   • Word Budget:   ~{word_budget} words (~{words_per_scene} words/scene)")
+    print(f"   • Coding Topic:  {is_coding} | Simpler: {simpler}")
+    print("=" * 72)
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
@@ -319,6 +329,7 @@ def plan_lesson(
         start = time.time()
         r = None
         try:
+            print(f"[planner] Attempt {attempt}/{MAX_ATTEMPTS}: Requesting JSON schema generation from {MODEL}...")
             r = chat(
                 model=MODEL,
                 messages=messages,
@@ -365,9 +376,14 @@ def plan_lesson(
                 continue
 
             print(
-                f"[planner] attempt {attempt} accepted in {elapsed}s "
-                f"({len(lesson.scenes)} scenes, {actual_words} words)"
+                f"\n✅ [PLANNER] Attempt {attempt} accepted in {elapsed}s!\n"
+                f"   • Title:  '{lesson.title}'\n"
+                f"   • Scenes: {len(lesson.scenes)} scenes | Total Words: {actual_words}"
             )
+            print("-" * 72)
+            print("📦 [PLANNER] RAW GENERATED LESSON JSON (MASTER PLAN):")
+            print(json.dumps(lesson.model_dump(), indent=2, ensure_ascii=False))
+            print("-" * 72 + "\n")
             return lesson, "llm"
 
         except ValidationError as e:
