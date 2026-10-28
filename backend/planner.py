@@ -116,9 +116,7 @@ def compute_scene_count(target_seconds: int) -> int:
     - 30-45s: 4 scenes (Title + 2 teaching + Quiz)
     - 46-75s: 5 scenes (Title + 3 teaching + Quiz)
     - 76-105s (90s): 6 scenes (Title + 4 teaching + Quiz)
-    - 106-135s (120s): 7 scenes (Title + 5 teaching + Quiz)
-    - 136-165s (150s): 8 scenes (Title + 6 teaching + Quiz)
-    - >165s (180s+): 9 scenes (Title + 7 teaching + Quiz)
+    - >105s (120s): 7 scenes (Title + 5 teaching + Quiz)
     """
     if target_seconds <= 45:
         return 4   # 3 teaching + quiz
@@ -126,12 +124,8 @@ def compute_scene_count(target_seconds: int) -> int:
         return 5   # 4 teaching + quiz
     elif target_seconds <= 105:
         return 6   # 5 teaching + quiz
-    elif target_seconds <= 135:
-        return 7   # 6 teaching + quiz
-    elif target_seconds <= 165:
-        return 8   # 7 teaching + quiz
     else:
-        return 9   # 8 teaching + quiz
+        return 7   # 6 teaching + quiz
 
 
 

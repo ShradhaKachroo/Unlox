@@ -465,8 +465,8 @@ def generate(req: GenerateRequest):
     if req.language not in SUPPORTED:
         raise HTTPException(400, f"language must be one of {SUPPORTED}")
 
-    # Allow 30–180s; default 90s (supports longer multi-slide lessons)
-    target_sec = max(30, min(180, req.target_seconds or req.target_length_seconds or 90))
+    # Allow 30–120s; default 90s
+    target_sec = max(30, min(120, req.target_seconds or req.target_length_seconds or 90))
     req_scene_count = max(3, min(10, req.scene_count)) if req.scene_count else None
 
     plan_key = _plan_cache_key(req.topic, req.level, target_sec, req.simpler, req_scene_count)
