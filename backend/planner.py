@@ -24,10 +24,13 @@ def is_coding_topic(topic: str) -> bool:
         "algorithm", "dsa", "class", "async", "thread", "recursion", "stack", "queue",
         "tree", "graph", "object oriented", "oop", "decorator", "generator", "data structure",
         "syntax", "compiler", "git", "api", "backend", "frontend", "database", "query",
-        "debug", "terminal", "script", "json", "rest api", "docker", "kubernetes"
+        "debug", "terminal", "script", "json", "rest api", "docker", "kubernetes",
+        "search", "binary search", "sort", "sorting", "list", "dict", "dictionary",
+        "hash", "hashmap", "hashtable", "heap", "bfs", "dfs", "dynamic programming", "dp",
+        "complexity", "big o", "node", "linked list"
     )
     for term in coding_terms:
-        if re.search(rf"\b{re.escape(term)}\b", t):
+        if re.search(rf"\b{re.escape(term)}(?:s|es)?\b", t):
             return True
     return False
 
