@@ -91,7 +91,7 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
         minHeight: '100vh',
         width: '100%',
         background: 'transparent',
-        color: '#f8fafc',
+        color: 'var(--text-main, #0f172a)',
         fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         padding: '36px 24px 60px',
         boxSizing: 'border-box',
@@ -106,10 +106,10 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
             onClick={onBack}
             style={{
               padding: '8px 16px',
-              borderRadius: '6px',
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              color: '#e2e8f0',
+              borderRadius: '8px',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              color: '#0284c7',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
@@ -117,6 +117,7 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
               alignItems: 'center',
               gap: '6px',
               transition: 'all 0.15s ease',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -126,8 +127,8 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
             <span>Back to Studio</span>
           </button>
 
-          <span style={{ fontSize: '12px', color: '#94a3b8' }}>
-            Progress: <strong style={{ color: '#34d399' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
+          <span style={{ fontSize: '13px', color: '#64748b' }}>
+            Progress: <strong style={{ color: '#059669' }}>{completedCount}/{currentTrack.modules.length} Completed ({progressPct}%)</strong>
           </span>
         </div>
 
@@ -138,13 +139,13 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
               fontSize: '28px',
               fontWeight: 700,
               margin: '0 0 6px 0',
-              color: '#ffffff',
+              color: '#0f172a',
               letterSpacing: '-0.01em',
             }}
           >
             Curriculum Pathways
           </h1>
-          <p style={{ margin: 0, fontSize: '14px', color: '#94a3b8' }}>
+          <p style={{ margin: 0, fontSize: '14px', color: '#475569' }}>
             Structured learning tracks. Select any module to generate its visual lesson.
           </p>
         </div>
@@ -162,33 +163,34 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                   flex: 1,
                   minWidth: '220px',
                   padding: '14px 16px',
-                  borderRadius: '8px',
-                  background: isSelected ? 'rgba(52, 211, 153, 0.1)' : '#0d1511',
-                  border: isSelected ? '1.5px solid #34d399' : '1px solid rgba(255, 255, 255, 0.08)',
-                  color: '#ffffff',
+                  borderRadius: '10px',
+                  background: isSelected ? '#ecfdf5' : '#ffffff',
+                  border: isSelected ? '2px solid #059669' : '1px solid #e2e8f0',
+                  color: '#0f172a',
                   textAlign: 'left',
                   cursor: 'pointer',
                   transition: 'all 0.15s ease',
+                  boxShadow: isSelected ? '0 4px 12px rgba(5, 150, 105, 0.08)' : '0 1px 3px rgba(15, 23, 42, 0.03)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '14px', color: isSelected ? '#34d399' : '#f1f5f9' }}>
+                  <span style={{ fontWeight: 700, fontSize: '14px', color: isSelected ? '#059669' : '#0f172a' }}>
                     {t.name}
                   </span>
                   <span
                     style={{
                       fontSize: '10px',
-                      padding: '1px 6px',
+                      padding: '2px 6px',
                       borderRadius: '4px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      color: '#94a3b8',
+                      background: '#f1f5f9',
+                      color: '#64748b',
                       fontWeight: 600,
                     }}
                   >
                     {t.category}
                   </span>
                 </div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', lineHeight: 1.35 }}>{t.description}</div>
+                <div style={{ fontSize: '11px', color: '#64748b', lineHeight: 1.35 }}>{t.description}</div>
               </button>
             );
           })}
@@ -197,19 +199,20 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
         {/* Modules List */}
         <div
           style={{
-            borderRadius: '10px',
-            background: '#0d1511',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            borderRadius: '12px',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
             padding: '18px',
             boxSizing: 'border-box',
+            boxShadow: '0 4px 16px rgba(15, 23, 42, 0.04)',
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {currentTrack.modules.map((m, idx) => {
               const isDone = !!completed[m.id];
-              let levelColor = '#34d399';
-              if (m.level === 'intermediate') levelColor = '#38bdf8';
-              if (m.level === 'advanced') levelColor = '#a78bfa';
+              let levelColor = '#059669';
+              if (m.level === 'intermediate') levelColor = '#0284c7';
+              if (m.level === 'advanced') levelColor = '#7c3aed';
 
               return (
                 <div
@@ -220,10 +223,11 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                     justifyContent: 'space-between',
                     padding: '14px 16px',
                     borderRadius: '8px',
-                    background: isDone ? 'rgba(52, 211, 153, 0.04)' : '#070b09',
-                    border: isDone ? '1px solid rgba(52, 211, 153, 0.3)' : '1px solid rgba(255, 255, 255, 0.06)',
+                    background: isDone ? '#f8fafc' : '#ffffff',
+                    border: isDone ? '1px solid #e2e8f0' : '1px solid #f1f5f9',
                     gap: '16px',
                     transition: 'all 0.12s ease',
+                    boxShadow: '0 1px 2px rgba(15, 23, 42, 0.02)',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
@@ -234,8 +238,8 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                         width: '22px',
                         height: '22px',
                         borderRadius: '4px',
-                        border: isDone ? 'none' : '1.5px solid rgba(255, 255, 255, 0.3)',
-                        background: isDone ? '#10b981' : 'transparent',
+                        border: isDone ? 'none' : '1.5px solid #cbd5e1',
+                        background: isDone ? '#10b981' : '#ffffff',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
@@ -251,14 +255,14 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2px' }}>
-                        <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                        <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600 }}>
                           #{idx + 1}
                         </span>
                         <span
                           style={{
                             fontWeight: 600,
                             fontSize: '14px',
-                            color: isDone ? '#64748b' : '#f8fafc',
+                            color: isDone ? '#94a3b8' : '#0f172a',
                             textDecoration: isDone ? 'line-through' : 'none',
                           }}
                         >
@@ -270,7 +274,7 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                             fontWeight: 600,
                             padding: '1px 6px',
                             borderRadius: '4px',
-                            background: `${levelColor}18`,
+                            background: `${levelColor}15`,
                             color: levelColor,
                             border: `1px solid ${levelColor}33`,
                             textTransform: 'uppercase',
@@ -279,7 +283,7 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                           {m.level}
                         </span>
                       </div>
-                      <div style={{ fontSize: '12px', color: '#94a3b8' }}>{m.description}</div>
+                      <div style={{ fontSize: '12px', color: '#64748b' }}>{m.description}</div>
                     </div>
                   </div>
 
@@ -289,9 +293,9 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
                     style={{
                       padding: '8px 14px',
                       borderRadius: '6px',
-                      background: 'rgba(52, 211, 153, 0.12)',
-                      border: '1px solid rgba(52, 211, 153, 0.3)',
-                      color: '#34d399',
+                      background: '#e0f2fe',
+                      border: '1px solid #bae6fd',
+                      color: '#0284c7',
                       fontSize: '12px',
                       fontWeight: 600,
                       cursor: 'pointer',

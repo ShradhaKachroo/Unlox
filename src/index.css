@@ -6,19 +6,23 @@
   font-family: 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: dark;
-  color: #f8fafc;
+  color-scheme: light;
+  color: #0f172a;
   
-  /* Default Non-Black Theme: Deep Cosmic Sapphire & Midnight Navy */
-  --bg-gradient: radial-gradient(ellipse at 50% -10%, #1d3a72 0%, #102144 45%, #0c1833 100%);
-  --bg-color: #0e1c3a;
-  --navbar-bg: rgba(14, 28, 58, 0.88);
-  --panel-bg: rgba(22, 42, 84, 0.68);
-  --panel-border: rgba(148, 163, 184, 0.22);
-  --input-bg: rgba(16, 32, 64, 0.88);
-  --input-border: rgba(148, 163, 184, 0.26);
-  --card-hover-border: rgba(56, 189, 248, 0.45);
-  --glow-color: rgba(56, 189, 248, 0.3);
+  /* Default Clean Light Theme: Sky Porcelain & Crisp Slate */
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #e0f2fe 0%, #f0f6fc 45%, #f8fafc 100%);
+  --bg-color: #f8fafc;
+  --navbar-bg: rgba(255, 255, 255, 0.92);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #e2e8f0;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+  --card-hover-border: #0284c7;
+  --glow-color: rgba(2, 132, 199, 0.15);
 
   background-color: var(--bg-color);
   background-image: var(--bg-gradient);
@@ -29,43 +33,94 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Theme 1: Slate Tech (Clean Steel / Slate Grey-Blue) */
-[data-theme="slate"] {
-  --bg-gradient: radial-gradient(ellipse at 50% -10%, #334155 0%, #1e293b 50%, #141f30 100%);
-  --bg-color: #1e293b;
-  --navbar-bg: rgba(30, 41, 59, 0.9);
-  --panel-bg: rgba(51, 65, 85, 0.58);
-  --panel-border: rgba(148, 163, 184, 0.25);
-  --input-bg: rgba(30, 41, 59, 0.88);
-  --input-border: rgba(148, 163, 184, 0.35);
-  --card-hover-border: rgba(56, 189, 248, 0.5);
+/* Light Theme 1: Sky Porcelain (Clean Sky Light) */
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #e0f2fe 0%, #f0f6fc 45%, #f8fafc 100%);
+  --bg-color: #f8fafc;
+  --navbar-bg: rgba(255, 255, 255, 0.92);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #e2e8f0;
+  --card-bg: #ffffff;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --input-bg: #ffffff;
+  --input-border: #cbd5e1;
+  --input-text: #0f172a;
+  --card-hover-border: #0284c7;
+  --glow-color: rgba(2, 132, 199, 0.15);
+}
+
+/* Light Theme 2: Warm Pearl (Warm Soft Rose / Champagne) */
+[data-theme="warm"] {
+  color-scheme: light;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #fdf2f8 0%, #fff1f2 45%, #fafaf9 100%);
+  --bg-color: #fafaf9;
+  --navbar-bg: rgba(255, 255, 255, 0.94);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #fecdd3;
+  --card-bg: #ffffff;
+  --text-main: #1c1917;
+  --text-muted: #78716c;
+  --input-bg: #ffffff;
+  --input-border: #fecdd3;
+  --input-text: #1c1917;
+  --card-hover-border: #f43f5e;
+  --glow-color: rgba(244, 63, 94, 0.15);
+}
+
+/* Light Theme 3: Fresh Mint (Sage & Nordic Emerald) */
+[data-theme="mint"] {
+  color-scheme: light;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #ecfdf5 0%, #f0fdf4 45%, #f8fafc 100%);
+  --bg-color: #f8fafc;
+  --navbar-bg: rgba(255, 255, 255, 0.94);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #a7f3d0;
+  --card-bg: #ffffff;
+  --text-main: #064e3b;
+  --text-muted: #4b5563;
+  --input-bg: #ffffff;
+  --input-border: #a7f3d0;
+  --input-text: #064e3b;
+  --card-hover-border: #10b981;
+  --glow-color: rgba(16, 185, 129, 0.15);
+}
+
+/* Light Theme 4: Lavender Mist (Calm Violet / Periwinkle) */
+[data-theme="lavender"] {
+  color-scheme: light;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #f5f3ff 0%, #ede9fe 45%, #faf5ff 100%);
+  --bg-color: #faf5ff;
+  --navbar-bg: rgba(255, 255, 255, 0.94);
+  --panel-bg: rgba(255, 255, 255, 0.95);
+  --panel-border: #ddd6fe;
+  --card-bg: #ffffff;
+  --text-main: #3b0764;
+  --text-muted: #6b7280;
+  --input-bg: #ffffff;
+  --input-border: #ddd6fe;
+  --input-text: #3b0764;
+  --card-hover-border: #8b5cf6;
+  --glow-color: rgba(139, 92, 246, 0.15);
+}
+
+/* Dark Fallback Theme: Cosmic Navy */
+[data-theme="navy"] {
+  color-scheme: dark;
+  --bg-gradient: radial-gradient(ellipse at 50% -10%, #1d3a72 0%, #102144 45%, #0c1833 100%);
+  --bg-color: #0e1c3a;
+  --navbar-bg: rgba(14, 28, 58, 0.92);
+  --panel-bg: rgba(22, 42, 84, 0.75);
+  --panel-border: rgba(148, 163, 184, 0.22);
+  --card-bg: rgba(22, 42, 84, 0.75);
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --input-bg: rgba(16, 32, 64, 0.88);
+  --input-border: rgba(148, 163, 184, 0.26);
+  --input-text: #ffffff;
+  --card-hover-border: rgba(56, 189, 248, 0.45);
   --glow-color: rgba(56, 189, 248, 0.3);
-}
-
-/* Theme 2: Alpine Teal / Nordic Forest (Lush Deep Spruce & Pine) */
-[data-theme="teal"] {
-  --bg-gradient: radial-gradient(ellipse at 50% -10%, #134e4a 0%, #0f3839 50%, #092425 100%);
-  --bg-color: #0e3334;
-  --navbar-bg: rgba(14, 51, 52, 0.9);
-  --panel-bg: rgba(19, 78, 74, 0.62);
-  --panel-border: rgba(94, 234, 212, 0.25);
-  --input-bg: rgba(14, 51, 52, 0.88);
-  --input-border: rgba(94, 234, 212, 0.3);
-  --card-hover-border: rgba(45, 212, 191, 0.5);
-  --glow-color: rgba(45, 212, 191, 0.3);
-}
-
-/* Theme 3: Amethyst / Royal Violet (Deep Purple Twilight) */
-[data-theme="violet"] {
-  --bg-gradient: radial-gradient(ellipse at 50% -10%, #4c1d95 0%, #2e1065 50%, #1b0c38 100%);
-  --bg-color: #210e44;
-  --navbar-bg: rgba(33, 14, 68, 0.9);
-  --panel-bg: rgba(67, 30, 128, 0.62);
-  --panel-border: rgba(192, 132, 252, 0.25);
-  --input-bg: rgba(33, 14, 68, 0.88);
-  --input-border: rgba(192, 132, 252, 0.3);
-  --card-hover-border: rgba(192, 132, 252, 0.5);
-  --glow-color: rgba(192, 132, 252, 0.3);
 }
 
 body {
@@ -76,7 +131,7 @@ body {
   background-color: var(--bg-color);
   background-image: var(--bg-gradient);
   background-attachment: fixed;
-  color: #f8fafc;
+  color: var(--text-main, #0f172a);
   overflow-x: hidden;
 }
 
@@ -95,16 +150,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #090d16;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
 
 /* Accessible focus ring */
@@ -237,7 +292,7 @@ select:focus-visible {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--panel-border);
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
 }
 
 .glass-card {
@@ -246,23 +301,24 @@ select:focus-visible {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--panel-border);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
 }
 
 .glass-card:hover {
   border-color: var(--card-hover-border);
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3), 0 0 20px var(--glow-color);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.09), 0 0 18px var(--glow-color);
 }
 
 
 .gradient-text-cyan {
-  background: linear-gradient(135deg, #ffffff 0%, #38bdf8 60%, #818cf8 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #0369a1 60%, #0284c7 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .gradient-text-emerald {
-  background: linear-gradient(135deg, #ffffff 0%, #34d399 60%, #10b981 100%);
+  background: linear-gradient(135deg, #064e3b 0%, #059669 60%, #10b981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -273,7 +329,7 @@ select:focus-visible {
 
 .btn-hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
 }
 
 .btn-hover-lift:active {

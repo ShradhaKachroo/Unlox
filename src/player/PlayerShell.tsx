@@ -368,8 +368,8 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         width: '100vw',
         height: '100vh',
         maxHeight: '100vh',
-        background: 'var(--bg-gradient, radial-gradient(ellipse at 50% -10%, #1d3a72 0%, #102144 45%, #0c1833 100%))',
-        color: '#f8fafc',
+        background: 'var(--bg-gradient, radial-gradient(ellipse at 50% -10%, #e0f2fe 0%, #f0f6fc 45%, #f8fafc 100%))',
+        color: 'var(--text-main, #0f172a)',
         fontFamily: getFontFamilyForLanguage(lesson.language, settings.dyslexia),
         overflow: 'hidden',
         position: 'relative',
@@ -384,11 +384,12 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'var(--navbar-bg, rgba(14, 28, 58, 0.95))',
-          borderBottom: '1px solid var(--panel-border, rgba(148, 163, 184, 0.2))',
+          background: 'var(--navbar-bg, rgba(255, 255, 255, 0.94))',
+          borderBottom: '1px solid var(--panel-border, #e2e8f0)',
           backdropFilter: 'blur(10px)',
           zIndex: 20,
           flexShrink: 0,
+          boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
         }}
       >
 
@@ -399,9 +400,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               className="control-btn"
               onClick={onBackToInput}
               style={{
-                background: 'rgba(30, 41, 59, 0.8)',
-                border: '1px solid rgba(71, 85, 105, 0.5)',
-                color: '#cbd5e1',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0284c7',
                 padding: '6px 12px',
                 borderRadius: '8px',
                 fontSize: '13px',
@@ -411,6 +412,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                 alignItems: 'center',
                 gap: '6px',
                 flexShrink: 0,
+                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
               }}
               title="Return to lesson creator"
             >
@@ -426,7 +428,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                 style={{
                   fontSize: '16px',
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: 'var(--text-main, #0f172a)',
                   letterSpacing: '-0.01em',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
@@ -440,8 +442,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                 style={{
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(2, 132, 199, 0.2)',
-                  color: '#38bdf8',
+                  background: 'rgba(2, 132, 199, 0.1)',
+                  color: '#0284c7',
+                  border: '1px solid rgba(2, 132, 199, 0.22)',
                   fontSize: '11px',
                   fontWeight: 700,
                   textTransform: 'uppercase',
@@ -456,9 +459,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                   style={{
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    color: '#34d399',
-                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    background: '#ecfdf5',
+                    color: '#059669',
+                    border: '1px solid #a7f3d0',
                     fontSize: '11px',
                     fontWeight: 600,
                     whiteSpace: 'nowrap',
@@ -475,15 +478,15 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
                   borderRadius: '4px',
                   background: currentScene?.audio_url
                     ? isPlaying && !isMuted
-                      ? 'rgba(56, 189, 248, 0.25)'
-                      : 'rgba(148, 163, 184, 0.15)'
-                    : 'rgba(239, 68, 68, 0.15)',
+                      ? 'rgba(2, 132, 199, 0.12)'
+                      : '#f1f5f9'
+                    : '#fef2f2',
                   color: currentScene?.audio_url
                     ? isPlaying && !isMuted
-                      ? '#38bdf8'
-                      : '#94a3b8'
-                    : '#f87171',
-                  border: `1px solid ${currentScene?.audio_url ? 'rgba(56, 189, 248, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
+                      ? '#0284c7'
+                      : '#64748b'
+                    : '#ef4444',
+                  border: `1px solid ${currentScene?.audio_url ? '#cbd5e1' : '#fecaca'}`,
                   fontSize: '11px',
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
@@ -515,14 +518,14 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             style={{
               fontSize: '13px',
               fontWeight: 600,
-              color: '#94a3b8',
+              color: '#64748b',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
             }}
           >
             <span>Scene {currentSceneNumber}/{sceneCount}:</span>
-            <span style={{ color: '#38bdf8', fontWeight: 700 }}>
+            <span style={{ color: '#0284c7', fontWeight: 700 }}>
               {currentScene?.heading || 'Intro'}
             </span>
           </div>
@@ -531,11 +534,12 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             style={{
               padding: '3px 8px',
               borderRadius: '9999px',
-              background: '#1e293b',
-              border: '1px solid #334155',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
               fontSize: '11px',
               fontWeight: 700,
-              color: '#38bdf8',
+              color: '#0284c7',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
             }}
           >
             {Math.round(localT / 1000)}s / {Math.round(sceneDuration / 1000)}s
@@ -547,9 +551,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             onClick={handleExplainSimpler}
             disabled={isSimplerLoading}
             style={{
-              background: 'rgba(56, 189, 248, 0.12)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              color: '#38bdf8',
+              background: '#f0fdf4',
+              border: '1px solid #a7f3d0',
+              color: '#059669',
               padding: '4px 10px',
               borderRadius: '8px',
               fontSize: '12px',
@@ -559,6 +563,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               alignItems: 'center',
               gap: '5px',
               transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
             }}
             title="Re-narrate this concept with everyday analogies and intuitive real-world examples"
           >
@@ -570,9 +575,9 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             id="btn-header-settings"
             onClick={() => setShowSettings(true)}
             style={{
-              background: 'rgba(30, 41, 59, 0.8)',
-              border: '1px solid rgba(56, 189, 248, 0.4)',
-              color: '#38bdf8',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              color: '#334155',
               padding: '4px 10px',
               borderRadius: '8px',
               fontSize: '12px',
@@ -581,6 +586,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
             }}
             title="Learner Preferences & Dyslexia Mode (P)"
           >

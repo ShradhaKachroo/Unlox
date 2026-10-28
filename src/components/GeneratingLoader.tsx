@@ -50,7 +50,7 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
         padding: '24px',
         boxSizing: 'border-box',
         background: 'transparent',
-        color: '#f8fafc',
+        color: 'var(--text-main, #0f172a)',
         fontFamily: '"Noto Sans", sans-serif',
       }}
 
@@ -59,13 +59,13 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
         style={{
           width: '100%',
           maxWidth: '560px',
-          background: 'rgba(15, 23, 42, 0.85)',
-          border: '1px solid rgba(56, 189, 248, 0.3)',
+          background: 'var(--card-bg, #ffffff)',
+          border: '1px solid var(--panel-border, #e2e8f0)',
           borderRadius: '24px',
           padding: '36px 32px',
           boxSizing: 'border-box',
           textAlign: 'center',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(56, 189, 248, 0.15)',
+          boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 30px rgba(2, 132, 199, 0.08)',
           backdropFilter: 'blur(20px)',
         }}
       >
@@ -81,27 +81,27 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '32px',
-            boxShadow: '0 0 25px rgba(56, 189, 248, 0.5)',
+            boxShadow: '0 4px 20px rgba(2, 132, 199, 0.35)',
             animation: 'pulse 2s infinite',
           }}
         >
           ✨
         </div>
 
-        <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 800, color: '#ffffff' }}>
+        <h2 style={{ margin: '0 0 8px 0', fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>
           Generating Video Lesson
         </h2>
-        <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#93c5fd', fontWeight: 600 }}>
+        <p style={{ margin: '0 0 24px 0', fontSize: '15px', color: '#0284c7', fontWeight: 600 }}>
           "{topic}"
         </p>
 
         {/* Progress Bar */}
-        <div style={{ width: '100%', height: '8px', background: '#1e293b', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
+        <div style={{ width: '100%', height: '8px', background: '#e2e8f0', borderRadius: '4px', overflow: 'hidden', marginBottom: '12px' }}>
           <div
             style={{
               width: `${progressPct}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #0284c7, #38bdf8, #818cf8)',
+              background: 'linear-gradient(90deg, #0284c7, #38bdf8)',
               transition: 'width 0.5s ease',
             }}
           />
@@ -116,8 +116,8 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
         {/* Rotating Jokes & Facts Card */}
         <div
           style={{
-            background: 'rgba(30, 41, 59, 0.6)',
-            border: '1px solid rgba(71, 85, 105, 0.4)',
+            background: '#f8fafc',
+            border: '1px solid #e2e8f0',
             borderRadius: '16px',
             padding: '20px',
             minHeight: '85px',
@@ -129,7 +129,7 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
           }}
         >
           <div style={{ fontSize: '24px', marginBottom: '6px' }}>{currentFact.emoji}</div>
-          <p style={{ margin: 0, fontSize: '13px', color: '#cbd5e1', lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: '13px', color: '#475569', lineHeight: 1.5 }}>
             {currentFact.text}
           </p>
         </div>

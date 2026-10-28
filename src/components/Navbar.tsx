@@ -7,11 +7,12 @@ interface NavbarProps {
   statusBadge?: string;
 }
 
-const THEMES: Array<{ id: 'navy' | 'slate' | 'teal' | 'violet'; label: string; icon: string }> = [
+const THEMES: Array<{ id: 'light' | 'warm' | 'mint' | 'lavender' | 'navy'; label: string; icon: string }> = [
+  { id: 'light', label: 'Sky Porcelain', icon: '☀️' },
+  { id: 'warm', label: 'Warm Pearl', icon: '🌸' },
+  { id: 'mint', label: 'Mint Sage', icon: '🌿' },
+  { id: 'lavender', label: 'Lavender Mist', icon: '🫐' },
   { id: 'navy', label: 'Cosmic Navy', icon: '🌌' },
-  { id: 'slate', label: 'Deep Slate', icon: '⛰️' },
-  { id: 'teal', label: 'Alpine Teal', icon: '🌲' },
-  { id: 'violet', label: 'Royal Violet', icon: '🔮' },
 ];
 
 export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
@@ -25,17 +26,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
     }
   });
 
-  const [theme, setTheme] = useState<'navy' | 'slate' | 'teal' | 'violet'>(() => {
+  const [theme, setTheme] = useState<'light' | 'warm' | 'mint' | 'lavender' | 'navy'>(() => {
     try {
-      const saved = localStorage.getItem('unlox_theme') as 'navy' | 'slate' | 'teal' | 'violet';
-      return saved && ['navy', 'slate', 'teal', 'violet'].includes(saved) ? saved : 'navy';
+      const saved = localStorage.getItem('unlox_theme') as 'light' | 'warm' | 'mint' | 'lavender' | 'navy';
+      return saved && ['light', 'warm', 'mint', 'lavender', 'navy'].includes(saved) ? saved : 'light';
     } catch {
-      return 'navy';
+      return 'light';
     }
   });
 
   const cycleTheme = () => {
-    const ids: Array<'navy' | 'slate' | 'teal' | 'violet'> = ['navy', 'slate', 'teal', 'violet'];
+    const ids: Array<'light' | 'warm' | 'mint' | 'lavender' | 'navy'> = ['light', 'warm', 'mint', 'lavender', 'navy'];
     const nextIdx = (ids.indexOf(theme) + 1) % ids.length;
     const next = ids[nextIdx];
     setTheme(next);
@@ -69,16 +70,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
         zIndex: 50,
         width: '100%',
         height: '64px',
-        background: 'var(--navbar-bg, rgba(14, 28, 58, 0.88))',
+        background: 'var(--navbar-bg, rgba(255, 255, 255, 0.92))',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderBottom: '1px solid var(--panel-border, rgba(148, 163, 184, 0.2))',
+        borderBottom: '1px solid var(--panel-border, #e2e8f0)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '0 24px',
         boxSizing: 'border-box',
         transition: 'all 0.2s ease',
+        boxShadow: '0 2px 10px rgba(15, 23, 42, 0.04)',
       }}
     >
 
@@ -103,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 0 16px rgba(56, 189, 248, 0.35)',
+            boxShadow: '0 2px 12px rgba(2, 132, 199, 0.35)',
             position: 'relative',
           }}
         >
@@ -125,7 +127,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
               height: '8px',
               borderRadius: '50%',
               background: '#10b981',
-              border: '2px solid #040711',
+              border: '2px solid #ffffff',
             }}
           />
         </div>
@@ -137,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
                 fontSize: '18px',
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
-                color: '#ffffff',
+                color: 'var(--text-main, #0f172a)',
               }}
             >
               UNLOX
@@ -150,15 +152,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
                 letterSpacing: '0.06em',
                 padding: '2px 6px',
                 borderRadius: '4px',
-                background: 'rgba(56, 189, 248, 0.14)',
-                color: '#38bdf8',
-                border: '1px solid rgba(56, 189, 248, 0.28)',
+                background: 'rgba(2, 132, 199, 0.1)',
+                color: '#0284c7',
+                border: '1px solid rgba(2, 132, 199, 0.25)',
               }}
             >
               Visual Teacher
             </span>
           </div>
-          <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
             Offline AI Code & Concept Animator
           </span>
         </div>
@@ -170,10 +172,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(15, 23, 42, 0.6)',
+          background: 'rgba(241, 245, 249, 0.85)',
           padding: '4px',
           borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          border: '1px solid #e2e8f0',
         }}
       >
         <button
@@ -182,7 +184,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           style={{
             padding: '7px 14px',
             borderRadius: '8px',
-            border: 'none',
+            border: currentView === 'input' ? '1px solid #e2e8f0' : '1px solid transparent',
             fontSize: '13px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -190,8 +192,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: currentView === 'input' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            color: currentView === 'input' ? '#38bdf8' : '#94a3b8',
+            background: currentView === 'input' ? '#ffffff' : 'transparent',
+            color: currentView === 'input' ? '#0284c7' : '#64748b',
+            boxShadow: currentView === 'input' ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
           }}
         >
           <span>✨</span>
@@ -204,7 +207,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           style={{
             padding: '7px 14px',
             borderRadius: '8px',
-            border: 'none',
+            border: currentView === 'study_plan' ? '1px solid #e2e8f0' : '1px solid transparent',
             fontSize: '13px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -212,8 +215,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: currentView === 'study_plan' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            color: currentView === 'study_plan' ? '#38bdf8' : '#94a3b8',
+            background: currentView === 'study_plan' ? '#ffffff' : 'transparent',
+            color: currentView === 'study_plan' ? '#0284c7' : '#64748b',
+            boxShadow: currentView === 'study_plan' ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
           }}
         >
           <span>🗺️</span>
@@ -226,7 +230,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
           style={{
             padding: '7px 14px',
             borderRadius: '8px',
-            border: 'none',
+            border: currentView === 'library' ? '1px solid #e2e8f0' : '1px solid transparent',
             fontSize: '13px',
             fontWeight: 600,
             cursor: 'pointer',
@@ -234,8 +238,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: currentView === 'library' ? 'rgba(56, 189, 248, 0.15)' : 'transparent',
-            color: currentView === 'library' ? '#38bdf8' : '#94a3b8',
+            background: currentView === 'library' ? '#ffffff' : 'transparent',
+            color: currentView === 'library' ? '#0284c7' : '#64748b',
+            boxShadow: currentView === 'library' ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
           }}
         >
           <span>📚</span>
@@ -256,13 +261,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             gap: '6px',
             padding: '6px 11px',
             borderRadius: '8px',
-            background: 'rgba(255, 255, 255, 0.08)',
-            border: '1px solid var(--panel-border, rgba(148, 163, 184, 0.25))',
-            color: '#f1f5f9',
+            background: 'var(--card-bg, #ffffff)',
+            border: '1px solid var(--panel-border, #cbd5e1)',
+            color: 'var(--text-main, #334155)',
             fontSize: '12px',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.2s ease',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
           }}
         >
           <span>{activeThemeObj.icon}</span>
@@ -278,9 +284,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             gap: '5px',
             padding: '6px 10px',
             borderRadius: '8px',
-            background: 'rgba(245, 158, 11, 0.12)',
-            border: '1px solid rgba(245, 158, 11, 0.28)',
-            color: '#fbbf24',
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            color: '#b45309',
             fontSize: '12px',
             fontWeight: 700,
             cursor: 'default',
@@ -302,13 +308,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             gap: '6px',
             padding: '6px 11px',
             borderRadius: '8px',
-            background: settings.dyslexia ? '#fef3c7' : 'rgba(30, 41, 59, 0.6)',
-            border: `1px solid ${settings.dyslexia ? '#d97706' : 'rgba(255, 255, 255, 0.1)'}`,
-            color: settings.dyslexia ? '#78350f' : '#cbd5e1',
+            background: settings.dyslexia ? '#fef3c7' : 'var(--card-bg, #ffffff)',
+            border: `1px solid ${settings.dyslexia ? '#f59e0b' : 'var(--panel-border, #cbd5e1)'}`,
+            color: settings.dyslexia ? '#78350f' : 'var(--text-main, #334155)',
             fontSize: '12px',
             fontWeight: 600,
             cursor: 'pointer',
             transition: 'all 0.2s ease',
+            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)',
           }}
         >
           <span>📖</span>
@@ -323,9 +330,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
             gap: '6px',
             padding: '6px 10px',
             borderRadius: '8px',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
-            color: '#34d399',
+            background: '#ecfdf5',
+            border: '1px solid #a7f3d0',
+            color: '#059669',
             fontSize: '11px',
             fontWeight: 700,
           }}
@@ -335,8 +342,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate }) => {
               width: '6px',
               height: '6px',
               borderRadius: '50%',
-              background: '#34d399',
-              boxShadow: '0 0 8px #34d399',
+              background: '#10b981',
+              boxShadow: '0 0 6px #10b981',
             }}
           />
           <span>Offline Ready</span>

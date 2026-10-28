@@ -35,7 +35,7 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
         minHeight: '100vh',
         width: '100%',
         background: 'transparent',
-        color: '#f8fafc',
+        color: 'var(--text-main, #0f172a)',
         fontFamily: '"Noto Sans", sans-serif',
         padding: '30px 24px',
         boxSizing: 'border-box',
@@ -51,15 +51,16 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
             style={{
               padding: '8px 16px',
               borderRadius: '10px',
-              background: 'rgba(30, 41, 59, 0.7)',
-              border: '1px solid #334155',
-              color: '#93c5fd',
+              background: '#ffffff',
+              border: '1px solid #cbd5e1',
+              color: '#0284c7',
               fontSize: '14px',
               fontWeight: 600,
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
           >
             ← Back to Generator
@@ -67,17 +68,17 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '14px', color: '#64748b' }}>
-              Saved Lessons: <strong style={{ color: '#38bdf8' }}>{entries.length}</strong>
+              Saved Lessons: <strong style={{ color: '#0284c7' }}>{entries.length}</strong>
             </span>
           </div>
         </div>
 
         {/* Header */}
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontSize: '32px', fontWeight: 800, margin: '0 0 8px 0', color: '#ffffff' }}>
+          <h1 style={{ fontSize: '32px', fontWeight: 800, margin: '0 0 8px 0', color: '#0f172a' }}>
             📚 Topic-wise Video Library
           </h1>
-          <p style={{ margin: 0, fontSize: '15px', color: '#94a3b8' }}>
+          <p style={{ margin: 0, fontSize: '15px', color: '#475569' }}>
             Instant offline replay of all your generated lessons. No loading or generation delay.
           </p>
         </div>
@@ -94,11 +95,12 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
               minWidth: '240px',
               padding: '12px 16px',
               borderRadius: '10px',
-              background: 'var(--input-bg, rgba(16, 32, 64, 0.88))',
-              border: '1px solid var(--input-border, rgba(148, 163, 184, 0.28))',
-              color: '#f8fafc',
+              background: 'var(--input-bg, #ffffff)',
+              border: '1px solid var(--input-border, #cbd5e1)',
+              color: 'var(--input-text, #0f172a)',
               fontSize: '14px',
               outline: 'none',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
             }}
 
           />
@@ -112,12 +114,13 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
                 style={{
                   padding: '8px 14px',
                   borderRadius: '8px',
-                  background: selectedTag === tag ? '#0284c7' : 'rgba(30, 41, 59, 0.6)',
-                  border: selectedTag === tag ? '1px solid #38bdf8' : '1px solid #334155',
-                  color: selectedTag === tag ? '#ffffff' : '#94a3b8',
+                  background: selectedTag === tag ? '#0284c7' : '#ffffff',
+                  border: selectedTag === tag ? '1px solid #0284c7' : '1px solid #e2e8f0',
+                  color: selectedTag === tag ? '#ffffff' : '#475569',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  boxShadow: selectedTag === tag ? '0 2px 6px rgba(2, 132, 199, 0.25)' : 'none',
                 }}
               >
                 {tag}
@@ -132,15 +135,16 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
             style={{
               padding: '60px 20px',
               textAlign: 'center',
-              background: 'rgba(15, 23, 42, 0.5)',
-              border: '1px dashed #334155',
+              background: '#ffffff',
+              border: '1px dashed #cbd5e1',
               borderRadius: '16px',
               color: '#64748b',
+              boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)',
             }}
           >
             <div style={{ fontSize: '36px', marginBottom: '12px' }}>🎬</div>
-            <p style={{ fontSize: '16px', margin: '0 0 6px 0', color: '#94a3b8' }}>No saved lessons found</p>
-            <span style={{ fontSize: '13px' }}>Generate a lesson from the creator to see it stored here automatically!</span>
+            <p style={{ fontSize: '16px', margin: '0 0 6px 0', color: '#0f172a', fontWeight: 600 }}>No saved lessons found</p>
+            <span style={{ fontSize: '13px', color: '#64748b' }}>Generate a lesson from the creator to see it stored here automatically!</span>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
@@ -148,14 +152,14 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
               <div
                 key={entry.id}
                 style={{
-                  background: 'rgba(15, 23, 42, 0.75)',
-                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                  background: 'var(--card-bg, #ffffff)',
+                  border: '1px solid var(--panel-border, #e2e8f0)',
                   borderRadius: '16px',
                   padding: '20px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)',
+                  boxShadow: '0 4px 16px rgba(15, 23, 42, 0.05)',
                   transition: 'transform 0.2s ease, border-color 0.2s ease',
                 }}
               >
@@ -165,11 +169,12 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
                       style={{
                         padding: '3px 8px',
                         borderRadius: '6px',
-                        background: 'rgba(56, 189, 248, 0.15)',
-                        color: '#38bdf8',
+                        background: '#e0f2fe',
+                        color: '#0284c7',
                         fontSize: '11px',
                         fontWeight: 700,
                         textTransform: 'uppercase',
+                        border: '1px solid #bae6fd',
                       }}
                     >
                       {entry.scene_count} Scenes • {formatDuration(entry.duration_seconds)}
@@ -177,14 +182,14 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
                     <button
                       type="button"
                       onClick={() => handleDelete(entry.id)}
-                      style={{ background: 'transparent', border: 'none', color: '#64748b', cursor: 'pointer', fontSize: '14px' }}
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '14px' }}
                       title="Delete lesson"
                     >
                       🗑️
                     </button>
                   </div>
 
-                  <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 8px 0', color: '#f8fafc', lineHeight: 1.3 }}>
+                  <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a', lineHeight: 1.3 }}>
                     {entry.title}
                   </h3>
                 </div>
@@ -197,8 +202,8 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
                       width: '100%',
                       padding: '10px',
                       borderRadius: '10px',
-                      background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
-                      border: '1px solid #38bdf8',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
+                      border: 'none',
                       color: '#ffffff',
                       fontSize: '14px',
                       fontWeight: 700,
@@ -207,6 +212,7 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
                       alignItems: 'center',
                       justifyContent: 'center',
                       gap: '6px',
+                      boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
                     }}
                   >
                     <span>▶ Play Lesson</span>
