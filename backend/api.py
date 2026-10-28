@@ -794,3 +794,99 @@ def download_video(lesson_id: str, lang: str = "en"):
                 headers={"Content-Disposition": f'attachment; filename="{filename}"'},
             )
     raise HTTPException(404, f"Exported MP4 video not found for {lesson_id} ({lang}). Please export first.")
+
+
+# ── POST /ask (Interactive AI Q&A Bot powered by real Ollama phi3.5 model) ───
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant", "system"]
+    content: str
+
+
+class AskRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    topic: Optional[str] = None
+    scene_heading: Optional[str] = None
+    scene_narration: Optional[str] = None
+    language: Optional[str] = "en"
+    history: Optional[list[ChatHistoryMessage]] = None
+
+
+@app.post("/ask")
+def ask_question(req: AskRequest):
+    """Answer learner questions conversationally using real local LLM (Ollama phi3.5)."""
+    import ollama
+    from planner import MODEL as OLLAMA_MODEL
+
+    # Construct pedagogical system prompt
+    context_lines = []
+    if req.topic:
+        context_lines.append(f"- Current Lesson Topic: {req.topic}")
+    if req.scene_heading:
+        context_lines.append(f"- Current Slide/Concept: {req.scene_heading}")
+    if req.scene_narration:
+        context_lines.append(f"- Current Explanation: {req.scene_narration}")
+    context_block = "\n".join(context_lines) if context_lines else "- General Visual Learning & Programming"
+
+    lang_instruction = ""
+    if req.language and req.language != "en":
+        lang_instruction = f"\n- If requested or appropriate, provide bilingual support or key terms in {req.language}."
+
+    system_prompt = (
+        "You are Blu, a warm, friendly, encouraging, and brilliant AI learning companion and coding tutor. "
+        "Your goal is to answer the student's question clearly, conversationally, and pedagogically.\n\n"
+        f"Learning Context:\n{context_block}\n\n"
+        "Guidelines:\n"
+        "1. Answer conversationally in 2 to 4 concise, crystal-clear paragraphs or bullet points.\n"
+        "2. Ground abstract ideas in intuitive, real-world analogies (e.g. cricket, chai, postal mail, everyday objects).\n"
+        "3. If code is requested or relevant, provide short (max 4-5 lines), clean, idiomatic code with brief inline comments.\n"
+        "4. Tone: warm, engaging, patient, and encouraging.\n"
+        "5. Be direct, helpful, and concise without unnecessary corporate jargon."
+        f"{lang_instruction}"
+    )
+
+    messages = [{"role": "system", "content": system_prompt}]
+    if req.history:
+        for m in req.history[-6:]:
+            messages.append({"role": m.role, "content": m.content})
+    messages.append({"role": "user", "content": req.question})
+
+    try:
+        t0 = time.time()
+        r = ollama.chat(
+            model=OLLAMA_MODEL,
+            messages=messages,
+            options={
+                "temperature": 0.6,
+                "num_ctx": 4096,
+                "num_thread": 8,
+                "keep_alive": "10m",
+            },
+        )
+        answer = r.message.content.strip()
+        elapsed = round(time.time() - t0, 2)
+        print(f"[ask] answered '{req.question[:30]}...' via {OLLAMA_MODEL} in {elapsed}s")
+        return {
+            "ok": True,
+            "answer": answer,
+            "model": OLLAMA_MODEL,
+            "source": "ollama",
+            "elapsed_seconds": elapsed,
+        }
+    except Exception as e:
+        print(f"[ask] ollama chat error: {e}, using pedagogical fallback")
+        topic_str = req.topic or "this topic"
+        fallback_ans = (
+            f"Here is a quick intuition for **{topic_str}**:\n\n"
+            f"Think of this step-by-step: in programming and computer science, "
+            f"every big concept is just simple building blocks put together.\n\n"
+            f"- **Core Idea**: Look at what goes in as input, and what gets produced as output.\n"
+            f"- **Next Step**: Try testing a simple case or tracing it with a small example to see the pattern clearly!\n\n"
+            f"*(Offline AI tutor active. Details: {str(e)})*"
+        )
+        return {
+            "ok": True,
+            "answer": fallback_ans,
+            "model": "fallback_tutor",
+            "source": "fallback",
+            "error": str(e),
+        }

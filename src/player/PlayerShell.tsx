@@ -13,6 +13,7 @@ import { Blu } from '../mascot/Blu';
 import { getAnchor } from '../mascot/anchors';
 import { apiRevoiceLesson, apiGetVoices, apiExportLesson, apiGenerateLesson, triggerFileDownload, API_BASE_URL } from '../api/lessonApi';
 import { VictoryModal } from '../components/VictoryModal';
+import { AskBluBot } from '../components/AskBluBot';
 import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
@@ -51,6 +52,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   });
   const [quality] = useState<QualityMode>(getInitialQuality);
   const { settings } = useSettings();
+  const [showBot, setShowBot] = useState(false);
 
   const handleExplainSimpler = async () => {
     if (isSimplerLoading) return;
@@ -569,6 +571,31 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           >
             <span>💡</span>
             <span>{isSimplerLoading ? 'Simplifying...' : 'Explain Simpler'}</span>
+          </button>
+
+          {/* Ask Blu AI Q&A Bot Button */}
+          <button
+            id="btn-player-ask-blu"
+            onClick={() => setShowBot((prev) => !prev)}
+            style={{
+              background: '#e0f2fe',
+              border: '1px solid #bae6fd',
+              color: '#0284c7',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.15s ease',
+              boxShadow: '0 1px 2px rgba(15, 23, 42, 0.04)',
+            }}
+            title="Ask Blu AI Tutor any question about this slide or topic (Powered by Phi-3.5)"
+          >
+            <span>🤖</span>
+            <span>Ask Blu</span>
           </button>
 
           <button
@@ -1407,6 +1434,16 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           onBackToInput={onBackToInput}
         />
       )}
+
+      {/* Interactive AI Companion Q&A Bot (Powered by Real Phi-3.5) */}
+      <AskBluBot
+        currentTopic={lesson.title}
+        currentSceneHeading={currentScene?.heading}
+        currentSceneNarration={currentScene?.narration}
+        language={lesson.language}
+        isOpen={showBot}
+        onToggle={() => setShowBot((prev) => !prev)}
+      />
     </div>
   );
 };

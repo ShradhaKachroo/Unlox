@@ -7,6 +7,7 @@ import { InputPage } from './pages/InputPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { StudyPlanPage } from './pages/StudyPlanPage';
 import { Navbar } from './components/Navbar';
+import { AskBluBot } from './components/AskBluBot';
 
 export const App: React.FC = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -162,6 +163,7 @@ export const App: React.FC = () => {
           }}
           onBack={() => setView('input')}
         />
+        <AskBluBot currentTopic={selectedTopic || undefined} />
       </div>
     );
   }
@@ -174,6 +176,7 @@ export const App: React.FC = () => {
           onSelectTopic={handleSelectFromStudyPlan}
           onBack={() => setView('input')}
         />
+        <AskBluBot currentTopic={selectedTopic || undefined} />
       </div>
     );
   }
@@ -189,6 +192,7 @@ export const App: React.FC = () => {
           initialTopic={selectedTopic}
           initialDuration={selectedDuration}
         />
+        <AskBluBot currentTopic={selectedTopic || undefined} />
       </div>
     );
   }

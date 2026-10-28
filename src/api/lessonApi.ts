@@ -255,3 +255,54 @@ export async function apiOcrImage(file: File): Promise<OcrResponse> {
   return await res.json();
 }
 
+export interface ChatHistoryItem {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export interface AskParams {
+  question: string;
+  topic?: string;
+  scene_heading?: string;
+  scene_narration?: string;
+  language?: string;
+  history?: ChatHistoryItem[];
+}
+
+export interface AskResponse {
+  ok: boolean;
+  answer: string;
+  model: string;
+  source: string;
+  elapsed_seconds?: number;
+  error?: string;
+}
+
+/**
+ * Ask a question to Blu AI Tutor (powered by real local Ollama model).
+ */
+export async function apiAskQuestion(params: AskParams): Promise<AskResponse> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for local LLM inference
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(params),
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+
+    if (!res.ok) {
+      const errorText = await res.text().catch(() => '');
+      throw new Error(`Ask question failed (${res.status}): ${errorText}`);
+    }
+
+    return await res.json();
+  } catch (err) {
+    clearTimeout(timeoutId);
+    throw err;
+  }
+}
+
