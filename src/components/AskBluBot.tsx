@@ -121,7 +121,7 @@ export const AskBluBot: React.FC<AskBluBotProps> = ({
       const errorMsg: Message = {
         id: `blu-err-${Date.now()}`,
         sender: 'blu',
-        text: `Sorry, I encountered a temporary connection glitch with the local engine: ${(err as Error).message}. Please ensure the backend is active on http://127.0.0.1:8000.`,
+        text: `I had trouble connecting to the local engine: ${(err as Error)?.message || 'Unknown error'}. You can try asking again or verify that Ollama is ready.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setMessages((prev) => [...prev, errorMsg]);

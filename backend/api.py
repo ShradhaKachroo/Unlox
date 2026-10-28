@@ -852,13 +852,14 @@ def ask_question(req: AskRequest):
 
     try:
         t0 = time.time()
-        r = ollama.chat(
+        client = ollama.Client(host="http://127.0.0.1:11434", timeout=45)
+        r = client.chat(
             model=OLLAMA_MODEL,
             messages=messages,
             options={
                 "temperature": 0.6,
-                "num_ctx": 4096,
-                "num_thread": 8,
+                "num_ctx": 2048,
+                "num_predict": 250,
                 "keep_alive": "10m",
             },
         )

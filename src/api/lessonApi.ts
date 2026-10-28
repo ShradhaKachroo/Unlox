@@ -283,7 +283,8 @@ export interface AskResponse {
  */
 export async function apiAskQuestion(params: AskParams): Promise<AskResponse> {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for local LLM inference
+  // 120s generous client timeout (backend handles internal 45s timeout and fallback)
+  const timeoutId = setTimeout(() => controller.abort(), 120000);
 
   try {
     const res = await fetch(`${API_BASE_URL}/ask`, {
@@ -296,12 +297,22 @@ export async function apiAskQuestion(params: AskParams): Promise<AskResponse> {
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => '');
-      throw new Error(`Ask question failed (${res.status}): ${errorText}`);
+      throw new Error(`Ask question failed (${res.status}): ${errorText || res.statusText}`);
     }
 
     return await res.json();
-  } catch (err) {
+  } catch (err: any) {
     clearTimeout(timeoutId);
+    if (err?.name === 'AbortError' || err?.message?.includes('aborted')) {
+      throw new Error(
+        'The local model took longer than expected to formulate its answer on your machine. Please ask a more focused question or try again.'
+      );
+    }
+    if (err instanceof TypeError && err.message?.toLowerCase().includes('failed to fetch')) {
+      throw new Error(
+        'Cannot connect to backend server at http://127.0.0.1:8000. Please ensure your backend is active.'
+      );
+    }
     throw err;
   }
 }
