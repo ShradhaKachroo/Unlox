@@ -11,10 +11,11 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 from export import export_audio_and_srt, export_mp4
 from fallback import get_fallback_lesson
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from ocr import extract_text_from_image
 from planner import plan_lesson
 from pydantic import BaseModel, Field, field_validator
 from schema import Lesson
@@ -45,15 +46,28 @@ def _cached_translate_text(text: str, language: str) -> str:
 
 
 def _cached_translate_lesson(lesson: Lesson, language: str) -> Lesson:
-    """translate_lesson but each narration is cached individually."""
+    """translate_lesson with full regional slide translation (headings, items, quiz)."""
     if language == "en":
         return lesson
     result = lesson.model_copy(deep=True)
     result.language = language
-    result.title = _cached_translate_text(lesson.title, language)
+    if result.title:
+        result.title = _cached_translate_text(lesson.title, language)
     for scene in result.scenes:
-        scene.narration = _cached_translate_text(scene.narration, language)
-        # headings and items stay English (same slides for all languages)
+        if scene.narration:
+            scene.narration = _cached_translate_text(scene.narration, language)
+        if getattr(scene, "heading", None):
+            scene.heading = _cached_translate_text(scene.heading, language)
+        if getattr(scene, "subtitle", None):
+            scene.subtitle = _cached_translate_text(scene.subtitle, language)
+        if getattr(scene, "items", None) and isinstance(scene.items, list):
+            scene.items = [_cached_translate_text(it, language) for it in scene.items if it]
+        if getattr(scene, "question", None):
+            scene.question = _cached_translate_text(scene.question, language)
+        if getattr(scene, "options", None) and isinstance(scene.options, list):
+            scene.options = [_cached_translate_text(opt, language) for opt in scene.options if opt]
+        if getattr(scene, "explanation", None):
+            scene.explanation = _cached_translate_text(scene.explanation, language)
     return result
 
 
@@ -370,6 +384,40 @@ def clear_cache():
     with open(CACHE_FILE, "w", encoding="utf-8") as f:
         f.write("{}\n")
     return {"ok": True, "message": "Cache cleared"}
+
+
+class OcrPayload(BaseModel):
+    image_base64: Optional[str] = None
+
+@app.post("/ocr")
+async def ocr_endpoint(file: Optional[UploadFile] = File(None), payload: Optional[OcrPayload] = None):
+    """Extract text and detected topic from image offline using rapidocr."""
+    try:
+        import base64
+        contents = None
+        if file is not None:
+            contents = await file.read()
+        elif payload and payload.image_base64:
+            b64_str = payload.image_base64
+            if "," in b64_str:
+                b64_str = b64_str.split(",", 1)[1]
+            contents = base64.b64decode(b64_str)
+
+        if not contents:
+            raise HTTPException(status_code=400, detail="No image provided (send file or image_base64)")
+
+        res = extract_text_from_image(contents)
+        return {
+            "ok": True,
+            "text": res["text"],
+            "lines": res["lines"],
+            "topic": res["topic"],
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ocr] error: {e}")
+        raise HTTPException(status_code=500, detail=f"OCR processing failed: {str(e)}")
 
 
 # ── Request models ─────────────────────────────────────────────────────────────

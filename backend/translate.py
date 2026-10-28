@@ -37,8 +37,12 @@ _model: Optional[object] = None
 def _load():
     global _tok, _model
     if _model is None:
-        _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn")
-        _model = AutoModelForSeq2SeqLM.from_pretrained(NAME)
+        try:
+            _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn", local_files_only=True)
+            _model = AutoModelForSeq2SeqLM.from_pretrained(NAME, local_files_only=True)
+        except Exception:
+            _tok = AutoTokenizer.from_pretrained(NAME, src_lang="eng_Latn")
+            _model = AutoModelForSeq2SeqLM.from_pretrained(NAME)
     return _tok, _model
 
 
@@ -55,6 +59,8 @@ def _raw_translate(text: str, language: str) -> str:
 
 def translate_text(text: str, language: str) -> str:
     """Translate text, restoring protected English code terms."""
+    if not text or not str(text).strip():
+        return text
     if language not in NLLB_CODES:
         return text
 
@@ -80,18 +86,31 @@ def translate_text(text: str, language: str) -> str:
 
 
 def translate_lesson(lesson, language: str):
-    """Return a copy of the lesson with ONLY narrations translated.
-    Headings, code, diagram items, and quiz text stay in English.
+    """Return a copy of the lesson with full regional slide content and narrations.
+    Translates title, headings, diagram items, and quiz questions/options.
     """
     if language == "en":
         return lesson
 
     result = lesson.model_copy(deep=True)
     result.language = language
-    # Title translated for display
-    result.title = translate_text(lesson.title, language)
+    if result.title:
+        result.title = translate_text(result.title, language)
+
     for scene in result.scenes:
-        # Only narration (voice text) is translated
-        scene.narration = translate_text(scene.narration, language)
-        # Headings, items, code, quiz question/options stay English
+        if scene.narration:
+            scene.narration = translate_text(scene.narration, language)
+        if getattr(scene, "heading", None):
+            scene.heading = translate_text(scene.heading, language)
+        if getattr(scene, "subtitle", None):
+            scene.subtitle = translate_text(scene.subtitle, language)
+        if getattr(scene, "items", None) and isinstance(scene.items, list):
+            scene.items = [translate_text(it, language) for it in scene.items if it]
+        if getattr(scene, "question", None):
+            scene.question = translate_text(scene.question, language)
+        if getattr(scene, "options", None) and isinstance(scene.options, list):
+            scene.options = [translate_text(opt, language) for opt in scene.options if opt]
+        if getattr(scene, "explanation", None):
+            scene.explanation = translate_text(scene.explanation, language)
+
     return result

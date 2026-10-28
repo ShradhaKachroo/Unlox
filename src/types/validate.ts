@@ -1,4 +1,4 @@
-import type { Lesson, Scene, ValidationResult, DiagramArrow } from './lesson';
+import type { Lesson, Scene, ValidationResult, DiagramArrow, Level } from './lesson';
 
 /**
  * Hand-written runtime validator and sanitizer.

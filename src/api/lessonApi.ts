@@ -226,3 +226,30 @@ export function triggerFileDownload(url: string, filename?: string): void {
   }, 100);
 }
 
+export interface OcrResponse {
+  ok: boolean;
+  text: string;
+  lines: string[];
+  topic: string;
+}
+
+/**
+ * Extract text and topic from an image file offline via /ocr.
+ */
+export async function apiOcrImage(file: File): Promise<OcrResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const res = await fetch(`${API_BASE_URL}/ocr`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text().catch(() => '');
+    throw new Error(`OCR failed (${res.status}): ${errorText}`);
+  }
+
+  return await res.json();
+}
+

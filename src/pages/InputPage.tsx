@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Lesson, Level } from '../types/lesson';
 import { LANGUAGE_LABELS } from '../utils/fonts';
 import { useSettings } from '../context/useSettings';
-import { apiGenerateLesson } from '../api/lessonApi';
+import { apiGenerateLesson, apiOcrImage } from '../api/lessonApi';
 import { GeneratingLoader } from '../components/GeneratingLoader';
 import { saveToLibrary } from '../utils/library';
 
@@ -46,6 +46,29 @@ export const InputPage: React.FC<InputPageProps> = ({
   const [preferredLanguages, setPreferredLanguages] = useState<string[]>(['en', 'hi', 'kn']);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Offline OCR Integration
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrPreview, setOcrPreview] = useState<string | null>(null);
+
+  const handleOcrFile = async (file: File) => {
+    if (!file) return;
+    setOcrLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await apiOcrImage(file);
+      if (res.topic) {
+        setTopic(res.topic);
+      }
+      setOcrPreview(res.text || res.topic);
+    } catch (err) {
+      console.error('OCR Error:', err);
+      setErrorMessage(`Offline OCR scan failed: ${(err as Error).message}`);
+    } finally {
+      setOcrLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (initialTopic) setTopic(initialTopic);
@@ -247,22 +270,96 @@ export const InputPage: React.FC<InputPageProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
-          {/* 1. Topic Input */}
+          {/* 1. Topic Input & Offline OCR Scanner */}
           <div>
-            <label
-              htmlFor="topic-input"
-              style={{
-                display: 'block',
-                fontSize: '12px',
-                fontWeight: 600,
-                color: '#cbd5e1',
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
-                marginBottom: '8px',
-              }}
-            >
-              1. Lesson Topic or Concept
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label
+                htmlFor="topic-input"
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: '#cbd5e1',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                }}
+              >
+                1. Lesson Topic or Concept
+              </label>
+
+              {/* Offline OCR Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={ocrLoading}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '5px 12px',
+                  borderRadius: '6px',
+                  background: ocrLoading ? 'rgba(56, 189, 248, 0.2)' : 'rgba(56, 189, 248, 0.1)',
+                  border: '1px solid rgba(56, 189, 248, 0.35)',
+                  color: '#38bdf8',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  cursor: ocrLoading ? 'wait' : 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+                title="Upload study notes, textbook photo, or diagram to extract topic offline"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                {ocrLoading ? 'Scanning Offline OCR...' : 'Scan Notes / OCR Image'}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleOcrFile(file);
+                    e.target.value = '';
+                  }
+                }}
+              />
+            </div>
+
+            {/* OCR Extracted Preview Banner */}
+            {ocrPreview && (
+              <div
+                style={{
+                  marginBottom: '10px',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  background: 'rgba(56, 189, 248, 0.08)',
+                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '5px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Offline OCR Scanned
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOcrPreview(null)}
+                    style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: '11px', cursor: 'pointer' }}
+                  >
+                    ✕ Dismiss
+                  </button>
+                </div>
+                <div style={{ fontSize: '12px', color: '#cbd5e1', maxHeight: '55px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                  {ocrPreview}
+                </div>
+              </div>
+            )}
 
             <input
               id="topic-input"

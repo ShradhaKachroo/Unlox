@@ -26,12 +26,6 @@ export const TitleCard: React.FC<TitleCardProps> = ({
   duration,
   quality = 'high',
 }) => {
-  const letters = Array.from(scene.heading);
-  const totalLetters = letters.length;
-
-  // Staggered letter reveal across first 1400ms
-  const letterDelay = Math.min(30, 900 / Math.max(1, totalLetters));
-
   // Animated underline under heading
   const underlineP = prog(t, 500, 1400);
   const underlineWidth = lerp(0, 520, easeOutCubic(underlineP));
@@ -159,14 +153,14 @@ export const TitleCard: React.FC<TitleCardProps> = ({
             Interactive Visual Lesson
           </div>
 
-          {/* Word-by-word with letter-by-letter reveal */}
+          {/* Word-by-word reveal preserving Indic ligatures, matras and characters intact */}
           <h1
             style={{
               margin: '0 0 16px 0',
-              fontSize: '54px',
+              fontSize: '50px',
               fontWeight: 800,
-              lineHeight: 1.25,
-              letterSpacing: '-0.02em',
+              lineHeight: 1.3,
+              letterSpacing: '-0.01em',
               textAlign: 'center',
               display: 'flex',
               flexWrap: 'wrap',
@@ -175,45 +169,25 @@ export const TitleCard: React.FC<TitleCardProps> = ({
             }}
           >
             {scene.heading.split(' ').map((word, wIdx) => {
-              // Calculate cumulative character offset for stagger
-              const prevChars = scene.heading
-                .split(' ')
-                .slice(0, wIdx)
-                .join(' ').length;
-              const wordStartOffset = wIdx > 0 ? prevChars + 1 : 0;
+              const wordP = stagger(t, wIdx, 80, 400);
+              const wordEased = easeOutBack(wordP);
+              const opacity = wordP;
+              const translateY = (1 - wordEased) * 28;
 
               return (
                 <span
                   key={`word-${wIdx}`}
                   style={{
-                    display: 'inline-flex',
+                    display: 'inline-block',
+                    opacity,
+                    transform: `translateY(${translateY}px)`,
+                    background: 'linear-gradient(135deg, #ffffff 20%, #93c5fd 80%, #60a5fa 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                     whiteSpace: 'nowrap',
                   }}
                 >
-                  {Array.from(word).map((char, cIdx) => {
-                    const globalIdx = wordStartOffset + cIdx;
-                    const charP = stagger(t, globalIdx, letterDelay, 350);
-                    const charEased = easeOutBack(charP);
-                    const opacity = charP;
-                    const translateY = (1 - charEased) * 36;
-                    const rotateX = (1 - charEased) * 45;
-
-                    return (
-                      <span
-                        key={`char-${globalIdx}`}
-                        style={{
-                          display: 'inline-block',
-                          opacity,
-                          transform: `translateY(${translateY}px) rotateX(${rotateX}deg)`,
-                          background: 'linear-gradient(135deg, #ffffff 20%, #93c5fd 80%, #60a5fa 100%)',
-                          WebkitBackgroundClip: 'text',
-                          WebkitTextFillColor: 'transparent',
-                        }}
-                      >
-                        {char}
-                      </span>
-                    );
-                  })}
+                  {word}
                 </span>
               );
             })}

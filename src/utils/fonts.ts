@@ -1,14 +1,14 @@
 export const LANGUAGE_FONTS: Record<string, string> = {
-  en: '"Noto Sans", sans-serif',
-  hi: '"Noto Sans Devanagari", "Noto Sans", sans-serif',
-  kn: '"Noto Sans Kannada", "Noto Sans", sans-serif',
-  ta: '"Noto Sans Tamil", "Noto Sans", sans-serif',
-  te: '"Noto Sans Telugu", "Noto Sans", sans-serif',
-  bn: '"Noto Sans Bengali", "Noto Sans", sans-serif',
-  mr: '"Noto Sans Devanagari", "Noto Sans", sans-serif',
-  gu: '"Noto Sans Gujarati", "Noto Sans", sans-serif',
-  es: '"Noto Sans", sans-serif',
-  fr: '"Noto Sans", sans-serif',
+  en: '"Outfit", "Noto Sans", system-ui, -apple-system, sans-serif',
+  hi: '"Nirmala UI", "Noto Sans Devanagari", "Mangal", "Aparajita", sans-serif',
+  kn: '"Nirmala UI", "Noto Sans Kannada", "Tunga", "Kedage", sans-serif',
+  ta: '"Nirmala UI", "Noto Sans Tamil", "Latha", "Vijaya", sans-serif',
+  te: '"Nirmala UI", "Noto Sans Telugu", "Gautami", "Vani", sans-serif',
+  bn: '"Nirmala UI", "Noto Sans Bengali", "Vrinda", "Shonar Bangla", sans-serif',
+  mr: '"Nirmala UI", "Noto Sans Devanagari", "Mangal", sans-serif',
+  gu: '"Nirmala UI", "Noto Sans Gujarati", "Shruti", sans-serif',
+  es: '"Outfit", "Noto Sans", sans-serif',
+  fr: '"Outfit", "Noto Sans", sans-serif',
 };
 
 export interface LanguageLabel {
