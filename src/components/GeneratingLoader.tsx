@@ -142,12 +142,14 @@ const BLU_MESSAGES = [
 
 export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targetSeconds }) => {
   const [elapsed, setElapsed] = useState(0);
-  const [hoveredStage, setHoveredStage] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<'trivia' | 'pipeline'>('trivia');
+  const [triviaPage, setTriviaPage] = useState<number>(0);
+  const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
   const [hoveredTrivia, setHoveredTrivia] = useState<number | null>(null);
+  const [hoveredStage, setHoveredStage] = useState<number | null>(null);
   const [bluSpeechIdx, setBluSpeechIdx] = useState(0);
   const [bluBounces, setBluBounces] = useState(0);
   const [isBluHovered, setIsBluHovered] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'pipeline' | 'trivia'>('all');
 
   useEffect(() => {
     const timer = setInterval(() => setElapsed((prev) => prev + 1), 1000);
@@ -163,10 +165,15 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
 
   const estTotal = targetSeconds >= 100 ? 55 : 35;
   const progressPct = Math.min(95, Math.round((elapsed / estTotal) * 100));
+  const currentStepIdx = progressPct < 35 ? 0 : progressPct < 65 ? 1 : progressPct < 85 ? 2 : 3;
 
   const handlePokeBlu = () => {
     setBluBounces((prev) => prev + 1);
     setBluSpeechIdx((prev) => (prev + 1) % BLU_MESSAGES.length);
+  };
+
+  const toggleFlip = (id: number) => {
+    setFlippedCards((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   return (
@@ -348,204 +355,157 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
           </div>
         </div>
 
-        {/* Navigation Tabs for Interactive Exploration */}
+        {/* Navigation Switcher: Single Focused Tab */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            marginBottom: '16px',
+            marginBottom: '18px',
+            paddingBottom: '14px',
             borderBottom: '1px solid #f1f5f9',
-            paddingBottom: '12px',
+            flexWrap: 'wrap',
+            gap: '10px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a' }}>
-              ✨ Hover to Explore While You Wait:
+            <span style={{ fontSize: '13px', fontWeight: 800, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {activeTab === 'trivia' ? '💡 Curiosity Bites While You Wait' : '⚙️ Generation Pipeline Specs'}
             </span>
           </div>
 
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div
+            style={{
+              display: 'inline-flex',
+              background: '#f1f5f9',
+              padding: '3px',
+              borderRadius: '12px',
+              border: '1px solid #e2e8f0',
+              gap: '4px',
+            }}
+          >
             <button
               type="button"
-              onClick={() => setSelectedFilter('all')}
+              onClick={() => setActiveTab('trivia')}
               style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
+                padding: '6px 14px',
+                borderRadius: '9px',
                 border: 'none',
-                background: selectedFilter === 'all' ? '#0284c7' : '#f1f5f9',
-                color: selectedFilter === 'all' ? '#ffffff' : '#64748b',
+                background: activeTab === 'trivia' ? '#ffffff' : 'transparent',
+                color: activeTab === 'trivia' ? '#0284c7' : '#64748b',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                boxShadow: activeTab === 'trivia' ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
                 transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              🌟 All
+              <span>💡</span>
+              <span>Trivia Bites</span>
             </button>
             <button
               type="button"
-              onClick={() => setSelectedFilter('pipeline')}
+              onClick={() => setActiveTab('pipeline')}
               style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
+                padding: '6px 14px',
+                borderRadius: '9px',
                 border: 'none',
-                background: selectedFilter === 'pipeline' ? '#0284c7' : '#f1f5f9',
-                color: selectedFilter === 'pipeline' ? '#ffffff' : '#64748b',
+                background: activeTab === 'pipeline' ? '#ffffff' : 'transparent',
+                color: activeTab === 'pipeline' ? '#0284c7' : '#64748b',
                 fontSize: '12px',
                 fontWeight: 700,
                 cursor: 'pointer',
+                boxShadow: activeTab === 'pipeline' ? '0 2px 6px rgba(15, 23, 42, 0.08)' : 'none',
                 transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
               }}
             >
-              ⚙️ Pipeline Tech
-            </button>
-            <button
-              type="button"
-              onClick={() => setSelectedFilter('trivia')}
-              style={{
-                padding: '5px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: selectedFilter === 'trivia' ? '#0284c7' : '#f1f5f9',
-                color: selectedFilter === 'trivia' ? '#ffffff' : '#64748b',
-                fontSize: '12px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-            >
-              💡 Trivia Bites
+              <span>⚙️</span>
+              <span>Pipeline Tech</span>
             </button>
           </div>
         </div>
 
-        {/* Section 1: Interactive Pipeline Stage Cards (Hoverable) */}
-        {(selectedFilter === 'all' || selectedFilter === 'pipeline') && (
-          <div style={{ marginBottom: '22px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-              Four-Stage Generation Pipeline (Hover any card to inspect internal metrics)
-            </div>
+        {/* View A: Clean Curiosity Bites Flip Cards (Focused 3-card deck) */}
+        {activeTab === 'trivia' && (
+          <div>
             <div
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '12px',
               }}
             >
-              {PIPELINE_STAGES.map((st, i) => {
-                const isHovered = hoveredStage === i;
-                return (
-                  <div
-                    key={st.step}
-                    onMouseEnter={() => setHoveredStage(i)}
-                    onMouseLeave={() => setHoveredStage(null)}
-                    style={{
-                      padding: '16px 14px',
-                      borderRadius: '16px',
-                      background: isHovered ? '#ffffff' : '#f8fafc',
-                      border: isHovered ? `2px solid ${st.color}` : '1px solid #e2e8f0',
-                      boxShadow: isHovered
-                        ? `0 12px 28px rgba(15, 23, 42, 0.12), 0 0 20px ${st.bg}`
-                        : '0 2px 6px rgba(15, 23, 42, 0.03)',
-                      transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                      transition: 'all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      minHeight: '120px',
-                    }}
-                  >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                        <span style={{ fontSize: '20px' }}>{st.icon}</span>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 800,
-                            padding: '2px 7px',
-                            borderRadius: '6px',
-                            background: st.bg,
-                            color: st.color,
-                          }}
-                        >
-                          Step {st.step}
-                        </span>
-                      </div>
-
-                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>
-                        {st.title}
-                      </div>
-
-                      <div style={{ fontSize: '12px', color: isHovered ? '#0f172a' : '#64748b', lineHeight: 1.4, transition: 'color 0.15s ease' }}>
-                        {isHovered ? st.detail : st.summary}
-                      </div>
-                    </div>
-
-                    {isHovered && (
-                      <div
-                        style={{
-                          marginTop: '10px',
-                          paddingTop: '8px',
-                          borderTop: '1px dashed #e2e8f0',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          color: st.color,
-                        }}
-                      >
-                        ⚡ {st.metrics}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>
+                Tap or hover any card to reveal the fascinating answer
+              </span>
+              <button
+                type="button"
+                onClick={() => setTriviaPage((prev) => (prev + 1) % 2)}
+                style={{
+                  background: '#f0f9ff',
+                  border: '1px solid #bae6fd',
+                  color: '#0284c7',
+                  borderRadius: '8px',
+                  padding: '4px 10px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span>🔀</span>
+                <span>More Facts (Set {triviaPage + 1}/2)</span>
+              </button>
             </div>
-          </div>
-        )}
 
-        {/* Section 2: Interactive Trivia Flip Cards (Hoverable) */}
-        {(selectedFilter === 'all' || selectedFilter === 'trivia') && (
-          <div>
-            <div style={{ fontSize: '12px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
-              Quick Curiosity Bites (Hover over cards to flip & reveal the answers)
-            </div>
             <div
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-                gap: '12px',
+                gap: '14px',
               }}
             >
-              {TRIVIA_CARDS.map((card) => {
-                const isHovered = hoveredTrivia === card.id;
+              {TRIVIA_CARDS.slice(triviaPage * 3, triviaPage * 3 + 3).map((card) => {
+                const isFlipped = flippedCards[card.id] || hoveredTrivia === card.id;
                 return (
                   <div
                     key={card.id}
+                    onClick={() => toggleFlip(card.id)}
                     onMouseEnter={() => setHoveredTrivia(card.id)}
                     onMouseLeave={() => setHoveredTrivia(null)}
                     style={{
-                      padding: '16px 16px',
-                      borderRadius: '16px',
-                      background: isHovered ? '#ffffff' : '#f8fafc',
-                      border: isHovered ? `2px solid ${card.color}` : '1px solid #e2e8f0',
-                      boxShadow: isHovered
-                        ? '0 12px 28px rgba(15, 23, 42, 0.1), 0 0 20px rgba(2, 132, 199, 0.08)'
+                      padding: '18px 16px',
+                      borderRadius: '18px',
+                      background: isFlipped ? '#ffffff' : '#f8fafc',
+                      border: isFlipped ? `2px solid ${card.color}` : '1.5px solid #e2e8f0',
+                      boxShadow: isFlipped
+                        ? '0 14px 30px rgba(15, 23, 42, 0.1), 0 0 20px rgba(2, 132, 199, 0.08)'
                         : '0 2px 6px rgba(15, 23, 42, 0.03)',
-                      transform: isHovered ? 'translateY(-4px)' : 'translateY(0)',
-                      transition: 'all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                      transform: isFlipped ? 'translateY(-3px)' : 'translateY(0)',
+                      transition: 'all 0.22s ease',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       justifyContent: 'space-between',
-                      minHeight: '130px',
+                      minHeight: '165px',
+                      boxSizing: 'border-box',
                     }}
                   >
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ fontSize: '18px' }}>{card.icon}</span>
-                          <span style={{ fontSize: '11px', fontWeight: 800, color: card.color, textTransform: 'uppercase' }}>
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: card.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                             {card.category}
                           </span>
                         </div>
@@ -553,14 +513,14 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
                           style={{
                             fontSize: '10px',
                             fontWeight: 700,
-                            padding: '2px 6px',
-                            borderRadius: '4px',
-                            background: isHovered ? card.color : '#e2e8f0',
-                            color: isHovered ? '#ffffff' : '#64748b',
+                            padding: '2px 7px',
+                            borderRadius: '5px',
+                            background: isFlipped ? card.color : '#e2e8f0',
+                            color: isFlipped ? '#ffffff' : '#64748b',
                             transition: 'all 0.2s ease',
                           }}
                         >
-                          {isHovered ? 'Answer Revealed' : 'Hover to Reveal'}
+                          {isFlipped ? 'Answer Revealed' : 'Click to Flip'}
                         </span>
                       </div>
 
@@ -568,13 +528,13 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
                       <div
                         style={{
                           fontSize: '13px',
-                          fontWeight: isHovered ? 500 : 700,
-                          color: isHovered ? '#1e293b' : '#0f172a',
-                          lineHeight: 1.45,
+                          fontWeight: isFlipped ? 500 : 700,
+                          color: isFlipped ? '#1e293b' : '#0f172a',
+                          lineHeight: 1.5,
                         }}
                       >
-                        {isHovered ? (
-                          <div style={{ color: '#0f172a' }}>
+                        {isFlipped ? (
+                          <div>
                             <span style={{ fontWeight: 800, color: card.color }}>Answer: </span>
                             {card.answer}
                           </div>
@@ -586,17 +546,109 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
 
                     <div
                       style={{
-                        marginTop: '10px',
+                        marginTop: '12px',
+                        paddingTop: '8px',
+                        borderTop: '1px solid #f1f5f9',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         fontSize: '11px',
-                        color: isHovered ? card.color : '#94a3b8',
+                        color: isFlipped ? card.color : '#94a3b8',
                         fontWeight: 600,
                       }}
                     >
                       <span>{card.badge}</span>
-                      <span>{isHovered ? '💡 Awesome!' : '👉 Touch / Hover'}</span>
+                      <span>{isFlipped ? '💡 Did you know?' : '👆 Tap to Reveal'}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* View B: Clean Generation Pipeline Stepper Cards */}
+        {activeTab === 'pipeline' && (
+          <div>
+            <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginBottom: '12px' }}>
+              Real-time multi-agent execution pipeline running on your local machine
+            </div>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '12px',
+              }}
+            >
+              {PIPELINE_STAGES.map((st, i) => {
+                const isHovered = hoveredStage === i;
+                const isDone = i < currentStepIdx;
+                const isCurrent = i === currentStepIdx;
+                return (
+                  <div
+                    key={st.step}
+                    onMouseEnter={() => setHoveredStage(i)}
+                    onMouseLeave={() => setHoveredStage(null)}
+                    style={{
+                      padding: '16px 14px',
+                      borderRadius: '16px',
+                      background: isCurrent ? '#f0f9ff' : isHovered ? '#ffffff' : '#f8fafc',
+                      border: isCurrent
+                        ? `2px solid #0284c7`
+                        : isHovered
+                        ? `2px solid ${st.color}`
+                        : '1.5px solid #e2e8f0',
+                      boxShadow: isCurrent
+                        ? '0 8px 24px rgba(2, 132, 199, 0.15)'
+                        : isHovered
+                        ? '0 8px 20px rgba(15, 23, 42, 0.08)'
+                        : '0 2px 6px rgba(15, 23, 42, 0.02)',
+                      transform: isHovered || isCurrent ? 'translateY(-3px)' : 'translateY(0)',
+                      transition: 'all 0.2s ease',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      minHeight: '155px',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span style={{ fontSize: '20px' }}>{st.icon}</span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 800,
+                            padding: '2px 7px',
+                            borderRadius: '6px',
+                            background: isDone ? '#ecfdf5' : isCurrent ? '#e0f2fe' : st.bg,
+                            color: isDone ? '#059669' : isCurrent ? '#0284c7' : st.color,
+                          }}
+                        >
+                          {isDone ? '✓ Done' : isCurrent ? '● Active' : `Step ${st.step}`}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '13px', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>
+                        {st.title}
+                      </div>
+
+                      <div style={{ fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>
+                        {st.summary}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        marginTop: '10px',
+                        paddingTop: '8px',
+                        borderTop: '1px dashed #e2e8f0',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: st.color,
+                      }}
+                    >
+                      ⚡ {st.tag}
                     </div>
                   </div>
                 );
