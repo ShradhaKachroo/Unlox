@@ -64,6 +64,31 @@ def get_topic_quiz_defaults(context: str) -> tuple[str, list[str], str]:
         )
 
 
+def derive_meaningful_items(heading: str, narration: str) -> list[str]:
+    """Extract informative conceptual items from narration and heading instead of generic placeholders."""
+    import re
+    clean_narration = re.sub(r"^[-*•\d.)\s]+", "", (narration or "").strip())
+    raw_segments = re.split(r"(?:[.;!?]|\band\s+then\b|\bfirst\b|\bnext\b|\bfinally\b|\balso\b)", clean_narration, flags=re.IGNORECASE)
+    segments = [
+        re.sub(r"^[-–—:,]\s*", "", s.strip())
+        for s in raw_segments
+        if len(s.strip()) > 8 and not re.match(r"^(step\s*\d*|done|ok|start|finish|next)$", s.strip(), re.IGNORECASE)
+    ]
+    if len(segments) >= 2:
+        res = []
+        for seg in segments[:4]:
+            s_clean = seg[0].upper() + seg[1:]
+            res.append(s_clean[:80])
+        return res
+
+    clean_heading = re.sub(r"['\"()]", "", heading or "Key Concept").strip()
+    return [
+        f"Core Principle: {clean_heading[:45]}",
+        "Key Mechanism: How the components interact",
+        "Real-World Value: Practical application in daily life",
+    ]
+
+
 class Scene(BaseModel):
     id: Optional[str] = None
     type: SceneType
@@ -216,13 +241,18 @@ class Scene(BaseModel):
                     self.highlight_lines = [1]
 
         elif self.type == "diagram":
-            if not self.items:
-                self.items = ["Step 1", "Step 2", "Done"]
+            import re
+            is_placeholder = (
+                not self.items
+                or all(re.match(r"^(step\s*\d*|done|start|finish|next|iteration\s*\d*)$", str(it).strip(), re.IGNORECASE) for it in self.items)
+            )
+            if is_placeholder:
+                self.items = derive_meaningful_items(self.heading or "", self.narration or "")
             if len(self.items) > 5:
                 self.items = self.items[:5]
             while len(self.items) < 2:
-                self.items.append("Complete")
-            self.items = [str(i)[:40] for i in self.items]
+                self.items.append("Key Concept")
+            self.items = [str(i)[:80] for i in self.items]
 
         elif self.type == "quiz":
             def_q, def_opts, def_exp = get_topic_quiz_defaults(self.heading or self.question or "Python Programming")

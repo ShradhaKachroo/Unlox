@@ -1,5 +1,26 @@
 import type { Lesson, Scene, ValidationResult, DiagramArrow, Level } from './lesson';
 
+function deriveMeaningfulDiagramItems(heading: string, narration: string): string[] {
+  const cleanNarration = (narration || '').replace(/^[-*•\d.)\s]+/gm, '').trim();
+  const rawSegments = cleanNarration
+    .split(/(?:[.;!?]|\band\s+then\b|\bfirst\b|\bnext\b|\bfinally\b|\balso\b)/i)
+    .map((s) => s.trim().replace(/^[-–—:,]\s*/, ''))
+    .filter((s) => s.length > 8 && !/^(step\s*\d*|done|ok|start|finish|next|iteration\s*\d*)$/i.test(s));
+
+  if (rawSegments.length >= 2) {
+    return rawSegments.slice(0, 4).map((seg) => {
+      return seg.charAt(0).toUpperCase() + seg.slice(1);
+    });
+  }
+
+  const cleanHeading = (heading || 'Key Concept').replace(/['"()]/g, '').trim();
+  return [
+    `Concept: ${cleanHeading}`,
+    `Core Mechanism: How it operates in practice`,
+    `Real-World Value: Everyday application`,
+  ];
+}
+
 /**
  * Hand-written runtime validator and sanitizer.
  * Guarantees that valid lesson structures are produced even when a weak LLM
@@ -131,8 +152,11 @@ export function validateLesson(raw: unknown): ValidationResult {
       if (Array.isArray(s.items)) {
         items = s.items.map((it) => (it != null ? String(it) : '')).filter(Boolean);
       }
-      if (items.length === 0) {
-        items = ['Step 1', 'Step 2', 'Step 3'];
+      const isPlaceholder =
+        items.length === 0 ||
+        items.every((it) => /^(step\s*\d*|done|start|finish|next|step|iteration\s*\d*)$/i.test(it.trim()));
+      if (isPlaceholder) {
+        items = deriveMeaningfulDiagramItems(heading, narration);
       }
 
       let arrows: DiagramArrow[] | undefined = undefined;

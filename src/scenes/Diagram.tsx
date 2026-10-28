@@ -11,6 +11,152 @@ interface DiagramProps {
   quality?: 'high' | 'low';
 }
 
+interface BadgeConfig {
+  label: string;
+  icon: string;
+  color: string;
+  bg: string;
+  border: string;
+  cardPrefix: string;
+}
+
+const getSceneBadge = (heading: string): BadgeConfig => {
+  const h = (heading || '').toLowerCase();
+  if (h.includes('example') || h.includes('real-world') || h.includes('everyday') || h.includes('application')) {
+    return {
+      label: 'Real-World Applications',
+      icon: '🌍',
+      color: '#34d399',
+      bg: 'rgba(16, 185, 129, 0.16)',
+      border: 'rgba(52, 211, 153, 0.4)',
+      cardPrefix: 'Example',
+    };
+  }
+  if (h.includes('characteristic') || h.includes('property') || h.includes('feature') || h.includes('visual')) {
+    return {
+      label: 'Core Characteristics & Properties',
+      icon: '✨',
+      color: '#38bdf8',
+      bg: 'rgba(56, 189, 248, 0.16)',
+      border: 'rgba(56, 189, 248, 0.4)',
+      cardPrefix: 'Feature',
+    };
+  }
+  if (h.includes('component') || h.includes('architecture') || h.includes('structure') || h.includes('agent')) {
+    return {
+      label: 'System Architecture & Components',
+      icon: '🧩',
+      color: '#818cf8',
+      bg: 'rgba(129, 140, 248, 0.16)',
+      border: 'rgba(129, 140, 248, 0.4)',
+      cardPrefix: 'Component',
+    };
+  }
+  if (h.includes('function') || h.includes('process') || h.includes('flow') || h.includes('step') || h.includes('how')) {
+    return {
+      label: 'Interactive Process Flow',
+      icon: '🔄',
+      color: '#f59e0b',
+      bg: 'rgba(245, 158, 11, 0.16)',
+      border: 'rgba(245, 158, 11, 0.4)',
+      cardPrefix: 'Stage',
+    };
+  }
+  return {
+    label: 'Key Concept Breakdown',
+    icon: '💡',
+    color: '#38bdf8',
+    bg: 'rgba(56, 189, 248, 0.16)',
+    border: 'rgba(56, 189, 248, 0.4)',
+    cardPrefix: 'Concept',
+  };
+};
+
+const CARD_THEMES = [
+  {
+    accent: '#38bdf8',
+    glowActive: 'rgba(56, 189, 248, 0.45)',
+    iconBg: 'rgba(56, 189, 248, 0.2)',
+    badgeText: '#38bdf8',
+    barGradient: 'linear-gradient(90deg, #38bdf8 0%, #818cf8 100%)',
+  },
+  {
+    accent: '#818cf8',
+    glowActive: 'rgba(129, 140, 248, 0.45)',
+    iconBg: 'rgba(129, 140, 248, 0.2)',
+    badgeText: '#a5b4fc',
+    barGradient: 'linear-gradient(90deg, #818cf8 0%, #c084fc 100%)',
+  },
+  {
+    accent: '#34d399',
+    glowActive: 'rgba(52, 211, 153, 0.45)',
+    iconBg: 'rgba(52, 211, 153, 0.2)',
+    badgeText: '#6ee7b7',
+    barGradient: 'linear-gradient(90deg, #34d399 0%, #f59e0b 100%)',
+  },
+  {
+    accent: '#f59e0b',
+    glowActive: 'rgba(245, 158, 11, 0.45)',
+    iconBg: 'rgba(245, 158, 11, 0.2)',
+    badgeText: '#fcd34d',
+    barGradient: 'linear-gradient(90deg, #f59e0b 0%, #f43f5e 100%)',
+  },
+];
+
+const parseItemContent = (rawText: string, idx: number) => {
+  const text = (rawText || '').trim();
+  let title = '';
+  let desc = '';
+
+  const colonIdx = text.indexOf(':');
+  const dashIdx = text.indexOf(' - ');
+
+  if (colonIdx > 0 && colonIdx < 40) {
+    title = text.slice(0, colonIdx).trim();
+    desc = text.slice(colonIdx + 1).trim();
+  } else if (dashIdx > 0 && dashIdx < 40) {
+    title = text.slice(0, dashIdx).trim();
+    desc = text.slice(dashIdx + 3).trim();
+  } else {
+    const words = text.split(/\s+/);
+    if (words.length > 5) {
+      title = words.slice(0, 3).join(' ');
+      desc = words.slice(3).join(' ');
+    } else {
+      title = text;
+      desc = '';
+    }
+  }
+
+  // Detect context-aware icon
+  const combined = (title + ' ' + desc).toLowerCase();
+  let icon = '🔹';
+  if (combined.includes('sensor') || combined.includes('camera') || combined.includes('eye') || combined.includes('vision') || combined.includes('perceiv')) {
+    icon = '👁️';
+  } else if (combined.includes('brain') || combined.includes('think') || combined.includes('reason') || combined.includes('process') || combined.includes('chip') || combined.includes('ai') || combined.includes('logic')) {
+    icon = '🧠';
+  } else if (combined.includes('act') || combined.includes('hand') || combined.includes('robot') || combined.includes('output') || combined.includes('motor') || combined.includes('action')) {
+    icon = '🦾';
+  } else if (combined.includes('phone') || combined.includes('smartphone') || combined.includes('siri') || combined.includes('alexa') || combined.includes('app')) {
+    icon = '📱';
+  } else if (combined.includes('airport') || combined.includes('station') || combined.includes('gas') || combined.includes('transit') || combined.includes('kiosk')) {
+    icon = '✈️';
+  } else if (combined.includes('navigat') || combined.includes('map') || combined.includes('route') || combined.includes('book') || combined.includes('gps')) {
+    icon = '🗺️';
+  } else if (combined.includes('cloud') || combined.includes('rain') || combined.includes('sun') || combined.includes('rainbow') || combined.includes('water')) {
+    icon = '🌈';
+  } else if (combined.includes('speed') || combined.includes('fast') || combined.includes('efficien') || combined.includes('power')) {
+    icon = '⚡';
+  } else if (combined.includes('code') || combined.includes('data') || combined.includes('program') || combined.includes('loop')) {
+    icon = '💻';
+  } else {
+    const defaultIcons = ['✨', '🎯', '💡', '🚀', '📌'];
+    icon = defaultIcons[idx % defaultIcons.length];
+  }
+
+  return { title, desc, icon };
+};
+
 export const Diagram: React.FC<DiagramProps> = ({
   scene,
   t,
@@ -19,6 +165,8 @@ export const Diagram: React.FC<DiagramProps> = ({
 }) => {
   const items = scene.items || [];
   const N = items.length;
+
+  const badgeConfig = getSceneBadge(scene.heading);
 
   // Resolve arrows
   const arrows: DiagramArrow[] = scene.arrows && scene.arrows.length > 0
@@ -31,13 +179,13 @@ export const Diagram: React.FC<DiagramProps> = ({
   const slotDuration = duration / Math.max(1, N);
 
   // Layout parameters on 1280x720 canvas
-  const boxWidth = Math.min(280, Math.max(220, 920 / Math.max(1, N)));
-  const boxHeight = 210;
+  const boxWidth = Math.min(290, Math.max(220, 940 / Math.max(1, N)));
+  const boxHeight = 220;
   const stageWidth = 1280;
-  const startY = 270;
+  const startY = 260;
 
   const totalBoxesWidth = N * boxWidth;
-  const gap = N > 1 ? Math.min(130, (1000 - totalBoxesWidth) / (N - 1)) : 0;
+  const gap = N > 1 ? Math.min(110, (1020 - totalBoxesWidth) / (N - 1)) : 0;
   const totalSpan = totalBoxesWidth + (N - 1) * gap;
   const startX = (stageWidth - totalSpan) / 2;
 
@@ -64,7 +212,7 @@ export const Diagram: React.FC<DiagramProps> = ({
         <div
           style={{
             position: 'absolute',
-            top: '40px',
+            top: '36px',
             left: 0,
             right: 0,
             textAlign: 'center',
@@ -75,29 +223,35 @@ export const Diagram: React.FC<DiagramProps> = ({
         >
           <div
             style={{
-              display: 'inline-block',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
               padding: '6px 16px',
               borderRadius: '9999px',
-              background: 'rgba(56, 189, 248, 0.14)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
-              color: '#38bdf8',
+              background: badgeConfig.bg,
+              border: `1px solid ${badgeConfig.border}`,
+              color: badgeConfig.color,
               fontSize: '13px',
               fontWeight: 800,
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
               marginBottom: '10px',
+              boxShadow: `0 4px 16px ${badgeConfig.bg}`,
             }}
           >
-            Execution Diagram
+            <span>{badgeConfig.icon}</span>
+            <span>{badgeConfig.label}</span>
           </div>
           <h2
             style={{
               margin: 0,
-              fontSize: '38px',
+              fontSize: '36px',
               fontWeight: 800,
-              background: 'linear-gradient(135deg, #ffffff 30%, #93c5fd 100%)',
+              background: 'linear-gradient(135deg, #ffffff 40%, #93c5fd 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
+              letterSpacing: '-0.02em',
+              textShadow: '0 2px 20px rgba(15, 23, 42, 0.4)',
             }}
           >
             {scene.heading}
@@ -219,7 +373,7 @@ export const Diagram: React.FC<DiagramProps> = ({
           })}
         </svg>
 
-        {/* 3D Boxes Container */}
+        {/* 3D Cards Container */}
         <div
           style={{
             position: 'absolute',
@@ -231,10 +385,14 @@ export const Diagram: React.FC<DiagramProps> = ({
             zIndex: 6,
           }}
         >
-          {items.map((itemText, idx) => {
+          {items.map((rawItemText, idx) => {
             const pos = boxPositions[idx];
             const slotStart = idx * slotDuration;
             const slotEnd = slotStart + slotDuration;
+
+            // Parse rich title, description & icon
+            const { title, desc, icon } = parseItemContent(rawItemText, idx);
+            const theme = CARD_THEMES[idx % CARD_THEMES.length];
 
             // Staggered 3D entrance with easeOutBack
             const boxEntranceP = prog(t, slotStart, slotStart + 450);
@@ -246,10 +404,10 @@ export const Diagram: React.FC<DiagramProps> = ({
             if (t < slotStart) return null;
 
             // 3D Card Dynamics
-            const scale = (isCurrentActive ? 1.06 : 1.0) * boxEased;
+            const scale = (isCurrentActive ? 1.05 : 1.0) * boxEased;
             const translateZ = isCurrentActive ? 40 : 10;
-            const tiltX = Math.sin(t * 0.0015 + idx) * 3;
-            const tiltY = Math.cos(t * 0.0018 + idx) * 4;
+            const tiltX = Math.sin(t * 0.0015 + idx) * 2.5;
+            const tiltY = Math.cos(t * 0.0018 + idx) * 3.5;
 
             return (
               <div
@@ -265,7 +423,7 @@ export const Diagram: React.FC<DiagramProps> = ({
                   transformStyle: 'preserve-3d',
                   boxSizing: 'border-box',
                   borderRadius: '22px',
-                  padding: '24px 22px',
+                  padding: '20px 20px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
@@ -273,19 +431,20 @@ export const Diagram: React.FC<DiagramProps> = ({
                     ? 'linear-gradient(145deg, #1e293b 0%, #0f172a 100%)'
                     : 'linear-gradient(145deg, #0f172a 0%, #080c18 100%)',
                   border: isCurrentActive
-                    ? '2.5px solid #38bdf8'
+                    ? `2.5px solid ${theme.accent}`
                     : isFinished
                     ? '2px solid #10b981'
                     : '1.5px solid #1e293b',
                   boxShadow: isCurrentActive
-                    ? '0 25px 50px rgba(0,0,0,0.8), 0 0 35px rgba(56, 189, 248, 0.45)'
+                    ? `0 25px 50px rgba(0,0,0,0.8), 0 0 35px ${theme.glowActive}`
                     : isFinished
                     ? '0 15px 35px rgba(0,0,0,0.6), 0 0 20px rgba(16, 185, 129, 0.25)'
                     : '0 15px 30px rgba(0,0,0,0.5)',
                   backdropFilter: quality === 'low' ? undefined : 'blur(16px)',
+                  transition: 'border 0.3s ease, box-shadow 0.3s ease',
                 }}
               >
-                {/* Step Header */}
+                {/* Card Top Category & State Badge */}
                 <div
                   style={{
                     display: 'flex',
@@ -296,34 +455,29 @@ export const Diagram: React.FC<DiagramProps> = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div
                       style={{
-                        width: '30px',
-                        height: '30px',
-                        borderRadius: '50%',
-                        background: isFinished
-                          ? '#10b981'
-                          : isCurrentActive
-                          ? '#38bdf8'
-                          : '#334155',
-                        color: isFinished || !isCurrentActive ? '#ffffff' : '#090d16',
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '10px',
+                        background: isCurrentActive ? theme.iconBg : 'rgba(255, 255, 255, 0.05)',
+                        border: isCurrentActive ? `1px solid ${theme.accent}` : '1px solid rgba(255, 255, 255, 0.1)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '14px',
-                        fontWeight: 800,
+                        fontSize: '16px',
                       }}
                     >
-                      {isFinished ? '✓' : idx + 1}
+                      {icon}
                     </div>
                     <span
                       style={{
-                        fontSize: '13px',
-                        fontWeight: 700,
-                        color: isFinished ? '#34d399' : isCurrentActive ? '#38bdf8' : '#94a3b8',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        color: isFinished ? '#34d399' : isCurrentActive ? theme.badgeText : '#94a3b8',
                         letterSpacing: '0.06em',
                         textTransform: 'uppercase',
                       }}
                     >
-                      Iteration {idx + 1}
+                      {badgeConfig.cardPrefix} {idx + 1}
                     </span>
                   </div>
 
@@ -361,22 +515,50 @@ export const Diagram: React.FC<DiagramProps> = ({
                   )}
                 </div>
 
-                {/* Box Main Content */}
+                {/* Card Main Concept & Detail */}
                 <div
                   style={{
-                    fontSize: '22px',
-                    fontWeight: 700,
-                    lineHeight: 1.4,
-                    color: isCurrentActive ? '#ffffff' : '#cbd5e1',
-                    textAlign: 'center',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
                     margin: 'auto 0',
-                    fontFamily: '"JetBrains Mono", monospace',
+                    textAlign: 'left',
+                    padding: '4px 2px',
                   }}
                 >
-                  {itemText}
+                  <div
+                    style={{
+                      fontSize: title.length > 22 ? '18px' : '21px',
+                      fontWeight: 800,
+                      lineHeight: 1.3,
+                      color: isCurrentActive ? '#ffffff' : '#e2e8f0',
+                      letterSpacing: '-0.01em',
+                      fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    }}
+                  >
+                    {title}
+                  </div>
+                  {desc && (
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        lineHeight: 1.45,
+                        color: isCurrentActive ? '#94a3b8' : '#64748b',
+                        marginTop: '6px',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                      }}
+                    >
+                      {desc}
+                    </div>
+                  )}
                 </div>
 
-                {/* Status Bar */}
+                {/* Animated Status Bar */}
                 <div
                   style={{
                     height: '5px',
@@ -384,10 +566,10 @@ export const Diagram: React.FC<DiagramProps> = ({
                     background: isFinished
                       ? '#10b981'
                       : isCurrentActive
-                      ? 'linear-gradient(90deg, #38bdf8 0%, #f59e0b 100%)'
+                      ? theme.barGradient
                       : '#1e293b',
                     width: '100%',
-                    boxShadow: isCurrentActive ? '0 0 12px rgba(56, 189, 248, 0.6)' : undefined,
+                    boxShadow: isCurrentActive ? `0 0 12px ${theme.glowActive}` : undefined,
                   }}
                 />
               </div>

@@ -36,8 +36,15 @@ class PlanScene(BaseModel):
     heading: str = Field(description="Clear, distinct title for this specific slide")
     narration: str = Field(min_length=15, description="Full spoken teaching explanation for this specific slide. Must directly explain the slide's visual content. NEVER duplicate narrations.")
     code: Optional[str] = Field(default=None, description="Python code snippet if this is a code_walkthrough slide")
-    highlight_lines: Optional[list[int]] = Field(default=None, description="1-based lines of code to highlight")
-    items: Optional[list[str]] = Field(default=None, description="List of step strings if this is a diagram slide")
+    items: Optional[list[str]] = Field(
+        default=None,
+        description=(
+            "For diagram slides: exactly 3 to 4 informative, concrete visual points or component cards (15 to 60 characters each). "
+            "Format each item as 'Short Title: Concise 4-7 word descriptive explanation'. "
+            "Example for AI Agents: ['Sensors: Cameras, audio & environment inputs', 'Reasoning Core: AI decision model evaluates next action', 'Actuators: Generates response or physical motion']. "
+            "NEVER use generic placeholders like 'Step 1' or 'Done'."
+        ),
+    )
     question: Optional[str] = Field(default=None, description="Conceptual question if this is a quiz slide")
     options: Optional[list[str]] = Field(default=None, description="Multiple choice options for quiz slide")
     correct_index: Optional[int] = Field(default=0, description="0-based index of correct option")
@@ -202,14 +209,14 @@ def get_system_prompt(
         middle_scenes_example = """    {
       "type": "diagram",
       "heading": "Visual Characteristics & Properties",
-      "items": ["Defining feature: How to identify it", "Key visual rule: Boundaries, sides, or symmetry", "Everyday comparison: Familiar real-world counterpart"],
+      "items": ["Perception: Sensors, cameras & microphone inputs", "Reasoning Core: Decision-making neural model", "Action: Actuators, physical robotic motion & outputs"],
       "narration": "Notice the defining visual characteristics that distinguish this form from others.",
       "mood": "thinking"
     },
     {
       "type": "diagram",
       "heading": "Everyday Real-World Examples",
-      "items": ["Where we see it in daily life", "Practical purpose and natural occurrence", "How to easily spot and recognize it"],
+      "items": ["Smartphones: Voice assistants like Siri & Alexa", "Transit Systems: Autonomous navigation & airport kiosks", "Smart Warehouses: Automated sorting & inventory robots"],
       "narration": "In the world around us, we encounter this everywhere from natural patterns to everyday objects.",
       "mood": "curious"
     },"""
@@ -223,7 +230,7 @@ Rules:
 - Exactly {scene_count} scenes. The LAST scene MUST be type "quiz".
 - "title_card": scene 1 only. Has heading + 1-sentence hook narration.{context_rule}
 {code_instruction}
-- "diagram": MUST have "items" array with 2–4 concrete visual points or steps.
+- "diagram": MUST have "items" array with 3–4 informative visual cards (15–60 chars each) formatted as 'Short Title: Concise 4-7 word descriptive explanation'. BANNED: NEVER output generic labels like 'Step 1', 'Step 2', or 'Done'. Every card MUST contain specific domain knowledge and meaningful terms related to the topic.
 - "quiz" (LAST scene only): {{
     "question": one clear conceptual question, max 120 chars,
     "options": exactly 3–4 realistic, distinct choices (1 correct, 2–3 plausible distractors), 10–100 chars each. NEVER use generic placeholder text like 'Option 1',
