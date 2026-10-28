@@ -74,12 +74,13 @@ export const SceneStage: React.FC<SceneStageProps> = ({
         height: '720px',
         position: 'relative',
         overflow: 'hidden',
-        background: 'linear-gradient(145deg, #090e1f 0%, #060914 50%, #02040a 100%)',
+        background: 'linear-gradient(145deg, #132247 0%, #0e1b38 50%, #0a142c 100%)',
         color: '#f8fafc',
         boxSizing: 'border-box',
         userSelect: 'none',
         opacity: stageOpacity,
       }}
+
     >
       {/* Dynamic Animated Glow (glides with t, or calm static glow in reduced motion) */}
       <div

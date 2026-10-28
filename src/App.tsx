@@ -6,6 +6,7 @@ import { PlayerShell } from './player/PlayerShell';
 import { InputPage } from './pages/InputPage';
 import { LibraryPage } from './pages/LibraryPage';
 import { StudyPlanPage } from './pages/StudyPlanPage';
+import { Navbar } from './components/Navbar';
 
 export const App: React.FC = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -90,7 +91,7 @@ export const App: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#040711',
+          background: 'var(--bg-gradient, #0e1c3a)',
           color: '#38bdf8',
           gap: '16px',
         }}
@@ -122,13 +123,14 @@ export const App: React.FC = () => {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#040711',
+          background: 'var(--bg-gradient, #0e1c3a)',
           color: '#f87171',
           gap: '16px',
           padding: '24px',
           textAlign: 'center',
         }}
       >
+
         <span style={{ fontSize: '20px', fontWeight: 700 }}>Initialization Error</span>
         <span style={{ color: '#cbd5e1', maxWidth: '500px' }}>{error}</span>
         <button
@@ -150,37 +152,47 @@ export const App: React.FC = () => {
 
   if (view === 'library') {
     return (
-      <LibraryPage
-        onWatchLesson={(lesson) => {
-          setCurrentLesson(lesson);
-          setStatusBadge('Saved Lesson');
-          setView('player');
-        }}
-        onBack={() => setView('input')}
-      />
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Navbar currentView="library" onNavigate={setView} statusBadge={statusBadge} />
+        <LibraryPage
+          onWatchLesson={(lesson) => {
+            setCurrentLesson(lesson);
+            setStatusBadge('Saved Lesson');
+            setView('player');
+          }}
+          onBack={() => setView('input')}
+        />
+      </div>
     );
   }
 
   if (view === 'study_plan') {
     return (
-      <StudyPlanPage
-        onSelectTopic={handleSelectFromStudyPlan}
-        onBack={() => setView('input')}
-      />
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Navbar currentView="study_plan" onNavigate={setView} statusBadge={statusBadge} />
+        <StudyPlanPage
+          onSelectTopic={handleSelectFromStudyPlan}
+          onBack={() => setView('input')}
+        />
+      </div>
     );
   }
 
   if (view === 'input' || !currentLesson) {
     return (
-      <InputPage
-        onLessonReady={handleLessonReady}
-        onOpenLibrary={() => setView('library')}
-        onOpenStudyPlan={() => setView('study_plan')}
-        initialTopic={selectedTopic}
-        initialDuration={selectedDuration}
-      />
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Navbar currentView="input" onNavigate={setView} statusBadge={statusBadge} />
+        <InputPage
+          onLessonReady={handleLessonReady}
+          onOpenLibrary={() => setView('library')}
+          onOpenStudyPlan={() => setView('study_plan')}
+          initialTopic={selectedTopic}
+          initialDuration={selectedDuration}
+        />
+      </div>
     );
   }
+
 
   return (
     <PlayerShell

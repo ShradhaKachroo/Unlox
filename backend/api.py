@@ -23,7 +23,7 @@ from translate import translate_lesson, translate_text
 from tts import HERE, SUPPORTED, build_timing
 
 # ── Prompt version: bump whenever planner prompt changes ──────────────────────
-PROMPT_VERSION = 6  # Phase 6: natural conceptual explanations without code for non-programming topics
+PROMPT_VERSION = 7  # Phase 7: monotonic progression between distinct concepts & anti-repeat audio loop fix
 
 # ── Paths ────────────────────────────────────────────────────────────────────
 OUT_DIR = os.path.join(HERE, "out")

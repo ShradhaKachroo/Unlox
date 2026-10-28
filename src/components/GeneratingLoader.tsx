@@ -49,10 +49,11 @@ export const GeneratingLoader: React.FC<GeneratingLoaderProps> = ({ topic, targe
         justifyContent: 'center',
         padding: '24px',
         boxSizing: 'border-box',
-        background: 'radial-gradient(ellipse at 50% 15%, #0c1836 0%, #050813 70%, #020409 100%)',
+        background: 'transparent',
         color: '#f8fafc',
         fontFamily: '"Noto Sans", sans-serif',
       }}
+
     >
       <div
         style={{

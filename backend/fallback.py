@@ -360,7 +360,81 @@ def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> d
     ))
 
     if not is_coding:
-        # 100% natural conceptual explanation without forced code
+        if target_seconds >= 100:
+            return {
+                "title": f"Complete Guide to {clean_topic}",
+                "level": level,
+                "language": "en",
+                "scenes": [
+                    {
+                        "type": "title_card",
+                        "heading": f"Introduction to {clean_topic}",
+                        "narration": f"Welcome to this visual lesson exploring {clean_topic}. Today we will discover what it is, examine how its different forms work, and see how to recognize it everywhere.",
+                        "mood": "happy",
+                    },
+                    {
+                        "type": "diagram",
+                        "heading": f"1. Core Definitions & Characteristics",
+                        "items": [
+                            f"Defining visual characteristics of {clean_topic}",
+                            "Key structural boundaries and symmetry",
+                            "Foundational principles that set it apart",
+                        ],
+                        "narration": f"Let us first examine the foundational definition of {clean_topic}. Notice its boundaries, symmetry, and defining attributes that establish how it is classified.",
+                        "mood": "thinking",
+                    },
+                    {
+                        "type": "diagram",
+                        "heading": f"2. Variations & Distinct Types",
+                        "items": [
+                            "Primary categories and distinct classifications",
+                            "Key differences between each variation",
+                            "How related forms connect with one another",
+                        ],
+                        "narration": f"Moving forward, let us compare the different variations of {clean_topic}. Observing how the types differ helps us quickly categorize and distinguish each unique form.",
+                        "mood": "curious",
+                    },
+                    {
+                        "type": "diagram",
+                        "heading": f"3. Everyday Real-World Examples",
+                        "items": [
+                            "Common daily objects and natural patterns",
+                            "Where we encounter these forms in architecture and art",
+                            "Practical utility and why these forms are chosen",
+                        ],
+                        "narration": f"Now consider where we see {clean_topic} in real life. From natural geometry to architecture and daily objects, recognizing these forms builds tangible, intuitive mastery.",
+                        "mood": "excited",
+                    },
+                    {
+                        "type": "diagram",
+                        "heading": f"4. Key Distinctions & Common Traps",
+                        "items": [
+                            "How to avoid confusing similar concepts",
+                            "Quick visual checklist for instant recognition",
+                            "Core summary rule to remember",
+                        ],
+                        "narration": f"Finally, let us review key distinctions so you never confuse similar forms. Remembering the essential boundary rules ensures complete clarity when identifying them.",
+                        "mood": "thinking",
+                    },
+                    {
+                        "type": "quiz",
+                        "heading": f"{clean_topic} Mastery Check",
+                        "question": f"What is the best way to accurately identify and differentiate {clean_topic}?",
+                        "options": [
+                            "By observing its visual boundaries, symmetry, and real-world examples",
+                            "By guessing based purely on arbitrary labels",
+                            "By assuming all variations have identical properties",
+                        ],
+                        "correct_index": 0,
+                        "answer_idx": 0,
+                        "explanation": f"Understanding structural boundaries and real-world context provides clear, lasting comprehension of {clean_topic}.",
+                        "narration": f"What is the best way to accurately identify and differentiate {clean_topic}?",
+                        "mood": "happy",
+                    },
+                ],
+            }
+
+        # Standard 4-scene progressive lesson for shorter durations
         return {
             "title": f"Exploring {clean_topic}",
             "level": level,
@@ -369,7 +443,7 @@ def _build_generic_lesson(topic: str, level: str, target_seconds: int = 60) -> d
                 {
                     "type": "title_card",
                     "heading": f"Introduction to {clean_topic}",
-                    "narration": f"Welcome to this visual lesson exploring {clean_topic}. Today we will explore what it is, its core characteristics, and how we recognize it all around us.",
+                    "narration": f"Welcome to this visual lesson exploring {clean_topic}. Today we will discover what it is, examine its visual properties, and spot it in daily life.",
                     "mood": "happy",
                 },
                 {

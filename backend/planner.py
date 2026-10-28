@@ -11,7 +11,7 @@ MODEL = "phi3.5"
 MAX_ATTEMPTS = 3
 
 # ── Prompt version (keep in sync with api.py PROMPT_VERSION) ─────────────────
-PROMPT_VERSION = 6
+PROMPT_VERSION = 7
 
 def is_coding_topic(topic: str) -> bool:
     import re
@@ -231,6 +231,7 @@ Rules:
     "narration": reads the question aloud (same as question text)
   }}{prev_q_rule}
 - "narration": REQUIRED for EVERY scene. Each scene MUST have UNIQUE, original teaching sentences directly describing the visual diagram steps or concept shown on that specific slide. NEVER repeat narrations across scenes. {narration_hint}
+- PROGRESSION RULE: Each scene MUST advance to a completely new, distinct aspect or stage of the topic. DO NOT dwell on or repeat the same concept across multiple slides. Scene 1 hooks the learner -> Scene 2 introduces the fundamental concept -> Scene 3 moves forward to distinct variations or deeper mechanics -> Scene 4 explores everyday real-world examples -> Quiz tests mastery. Every slide MUST move forward to the next concept!
 - "mood": one of "happy" | "thinking" | "excited" | "curious"
 
 JSON Schema:

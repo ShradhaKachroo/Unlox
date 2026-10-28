@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { QuizScene as QuizSceneType } from '../types/lesson';
+import { playSuccessChime, playWrongSound } from '../utils/audioSfx';
 
 interface QuizSceneProps {
   scene: QuizSceneType;
@@ -8,10 +9,6 @@ interface QuizSceneProps {
   quality?: 'high' | 'low';
 }
 
-/**
- * Strips leading redundant prefixes like "A) ", "B. ", "Option 1: ", "(A) ", "1. "
- * so badges remain clean and never duplicated.
- */
 function cleanOptionText(text: string): string {
   if (!text) return '';
   return text
@@ -23,6 +20,7 @@ const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E'];
 
 export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const question = scene.question || scene.heading || 'Knowledge Check';
   const rawOptions = scene.options && scene.options.length >= 2
@@ -31,6 +29,32 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
   const correctIdx = scene.answer_idx ?? 0;
   const isAnswered = selectedIdx !== null;
   const isCorrect = selectedIdx === correctIdx;
+
+  const handleSelectOption = (idx: number) => {
+    if (isAnswered) return;
+    setSelectedIdx(idx);
+    if (idx === correctIdx) {
+      playSuccessChime();
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 2500);
+    } else {
+      playWrongSound();
+    }
+  };
+
+  // Keyboard shortcut listener
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (isAnswered) return;
+      const key = e.key.toUpperCase();
+      if (key === '1' || key === 'A') handleSelectOption(0);
+      else if (key === '2' || key === 'B') handleSelectOption(1);
+      else if (key === '3' || key === 'C') handleSelectOption(2);
+      else if (key === '4' || key === 'D') handleSelectOption(3);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isAnswered, correctIdx]);
 
   return (
     <div
@@ -41,15 +65,51 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '28px 24px',
+        padding: '24px 20px',
         boxSizing: 'border-box',
         background: 'radial-gradient(ellipse at 50% 20%, #1e1b4b 0%, #0f172a 70%, #020617 100%)',
         color: '#f8fafc',
-        fontFamily: '"Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+        fontFamily: '"Noto Sans", system-ui, -apple-system, sans-serif',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
+      {/* Confetti Particle Burst on Correct */}
+      {showConfetti && (
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 20 }}>
+          {Array.from({ length: 30 }).map((_, i) => {
+            const colors = ['#38bdf8', '#34d399', '#fbbf24', '#f43f5e', '#a855f7'];
+            const color = colors[i % colors.length];
+            const left = `${15 + (i * 2.5)}%`;
+            const animDuration = `${0.8 + (i % 5) * 0.2}s`;
+            const animDelay = `${(i % 4) * 0.1}s`;
+            return (
+              <span
+                key={i}
+                style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  left,
+                  width: `${6 + (i % 6)}px`,
+                  height: `${8 + (i % 8)}px`,
+                  background: color,
+                  borderRadius: i % 2 === 0 ? '50%' : '2px',
+                  opacity: 0.9,
+                  transform: `rotate(${i * 24}deg)`,
+                  animation: `confettiFall ${animDuration} ease-out ${animDelay} forwards`,
+                }}
+              />
+            );
+          })}
+          <style>{`
+            @keyframes confettiFall {
+              0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+              100% { transform: translateY(500px) rotate(720deg); opacity: 0; }
+            }
+          `}</style>
+        </div>
+      )}
+
       {/* Background ambient glow highlight */}
       <div
         style={{
@@ -77,7 +137,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
           fontWeight: 700,
           textTransform: 'uppercase',
           letterSpacing: '0.08em',
-          marginBottom: '14px',
+          marginBottom: '12px',
           zIndex: 1,
         }}
       >
@@ -89,7 +149,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
         style={{
           maxWidth: '740px',
           textAlign: 'center',
-          marginBottom: '22px',
+          marginBottom: '20px',
           zIndex: 1,
         }}
       >
@@ -98,7 +158,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
             fontSize: '22px',
             fontWeight: 800,
             lineHeight: 1.35,
-            margin: '0 0 8px 0',
+            margin: '0 0 6px 0',
             color: '#ffffff',
             textShadow: '0 2px 10px rgba(0,0,0,0.5)',
           }}
@@ -106,7 +166,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
           {question}
         </h2>
         <span style={{ fontSize: '13px', color: '#94a3b8' }}>
-          Select the best answer below to check your understanding:
+          Choose the correct answer (use buttons or keys 1, 2, 3):
         </span>
       </div>
 
@@ -134,14 +194,14 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
 
           if (isAnswered) {
             if (idx === correctIdx) {
-              btnBg = 'rgba(34, 197, 94, 0.18)';
+              btnBg = 'rgba(34, 197, 94, 0.22)';
               btnBorder = '2px solid #22c55e';
               btnColor = '#4ade80';
               badgeBg = '#22c55e';
               badgeColor = '#052e16';
               badgeBorder = 'none';
             } else if (idx === selectedIdx) {
-              btnBg = 'rgba(239, 68, 68, 0.18)';
+              btnBg = 'rgba(239, 68, 68, 0.22)';
               btnBorder = '2px solid #ef4444';
               btnColor = '#f87171';
               badgeBg = '#ef4444';
@@ -161,11 +221,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
             <button
               key={idx}
               type="button"
-              onClick={() => {
-                if (!isAnswered) {
-                  setSelectedIdx(idx);
-                }
-              }}
+              onClick={() => handleSelectOption(idx)}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -180,7 +236,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
                 cursor: isAnswered ? 'default' : 'pointer',
                 textAlign: 'left',
                 transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: isAnswered && idx === correctIdx ? '0 0 20px rgba(34, 197, 94, 0.28)' : 'none',
+                boxShadow: isAnswered && idx === correctIdx ? '0 0 24px rgba(34, 197, 94, 0.35)' : 'none',
                 position: 'relative',
               }}
             >
@@ -268,7 +324,7 @@ export const QuizScene: React.FC<QuizSceneProps> = ({ scene }) => {
             justifyContent: 'space-between',
             gap: '12px',
             zIndex: 1,
-            animation: 'fadeIn 0.25s ease',
+            animation: 'fadeInUp 0.25s ease',
           }}
         >
           <div style={{ flex: 1, lineHeight: 1.4 }}>

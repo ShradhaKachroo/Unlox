@@ -90,13 +90,14 @@ export const StudyPlanPage: React.FC<StudyPlanPageProps> = ({ onSelectTopic, onB
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: '#090d0b',
+        background: 'transparent',
         color: '#f8fafc',
         fontFamily: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         padding: '36px 24px 60px',
         boxSizing: 'border-box',
       }}
     >
+
       <div style={{ maxWidth: '880px', margin: '0 auto' }}>
         {/* Navigation Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>

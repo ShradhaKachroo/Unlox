@@ -17,7 +17,9 @@ export interface GenerateParams {
   voice: 'female' | 'male';
   local_context: boolean;
   generate_all_voices?: boolean;
+  simpler?: boolean;
 }
+
 
 export interface RevoiceParams {
   lesson_id: string;

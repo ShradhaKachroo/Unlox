@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { Scene, SceneMood } from '../types/lesson';
 import { type AnchorPoint } from './anchors';
 import { prog } from '../anim/helpers';
 import { easeOutBack, clamp01 } from '../anim/ease';
 import { useSettings } from '../context/useSettings';
+import { playClickSound } from '../utils/audioSfx';
 
 interface BluProps {
   scene: Scene;
@@ -12,6 +13,7 @@ interface BluProps {
   mood?: SceneMood;
   anchor: AnchorPoint | null;
 }
+
 
 export const Blu: React.FC<BluProps> = ({
   scene,
@@ -22,6 +24,21 @@ export const Blu: React.FC<BluProps> = ({
 }) => {
   const { settings } = useSettings();
   const isReducedMotion = settings.dyslexia;
+  const [tipBubble, setTipBubble] = useState<string | null>(null);
+
+  const handleBluClick = () => {
+    playClickSound();
+    const tips = [
+      '💡 Notice how the memory reference updates step-by-step!',
+      '🦉 Blu is narrating with offline neural voice and phonemes!',
+      '🎯 Follow the pointer stick to trace the exact line!',
+      '✨ Keep your focus sharp, you are mastering this concept!',
+      '🚀 Try solving the quiz question when it appears!',
+    ];
+    const picked = tips[Math.floor(Math.random() * tips.length)];
+    setTipBubble(picked);
+    setTimeout(() => setTipBubble(null), 3500);
+  };
 
   // Resolve active mood with intelligent defaults
   let currentMood: SceneMood = mood || scene.mood || 'happy';
@@ -32,6 +49,7 @@ export const Blu: React.FC<BluProps> = ({
       currentMood = anchor ? 'thinking' : 'happy';
     }
   }
+
 
   // Entrance bounce in first 600ms
   const entranceP = prog(t, 0, 600);
@@ -134,17 +152,60 @@ export const Blu: React.FC<BluProps> = ({
         bottom: '8px',
         width: '210px',
         height: '230px',
-        pointerEvents: 'none',
+        pointerEvents: 'auto',
+        cursor: 'pointer',
         zIndex: 15,
         transform: `translateY(${bobY + hopY}px)`,
       }}
+      onClick={handleBluClick}
+      title="Click Blu for teacher tips!"
     >
+      {/* Floating Tip Bubble */}
+      {tipBubble && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '-54px',
+            right: '10px',
+            background: 'rgba(15, 23, 42, 0.94)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid #38bdf8',
+            borderRadius: '10px',
+            padding: '7px 12px',
+            color: '#ffffff',
+            fontSize: '11px',
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.5), 0 0 14px rgba(56, 189, 248, 0.25)',
+            zIndex: 30,
+            animation: 'fadeInUp 0.2s ease',
+            pointerEvents: 'none',
+          }}
+        >
+          {tipBubble}
+          <div
+            style={{
+              position: 'absolute',
+              bottom: '-6px',
+              right: '35px',
+              width: '10px',
+              height: '10px',
+              background: 'rgba(15, 23, 42, 0.94)',
+              borderRight: '1px solid #38bdf8',
+              borderBottom: '1px solid #38bdf8',
+              transform: 'rotate(45deg)',
+            }}
+          />
+        </div>
+      )}
+
       <svg
         viewBox="0 0 210 230"
         width="100%"
         height="100%"
         style={{ overflow: 'visible' }}
       >
+
         <defs>
           {/* Blu's vibrant teacher blue gradient */}
           <linearGradient id="bluBodyGrad" x1="20%" y1="0%" x2="80%" y2="100%">

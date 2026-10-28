@@ -220,16 +220,32 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
 
       let nextT = currentT + delta;
 
-      // When audio is actively playing for current scene, lock nextT to audio.currentTime
+      // When audio is actively playing for current scene, lock nextT to audio.currentTime without jumping backward
       if (
         audio &&
         !audio.paused &&
         !audio.seeking &&
+        !audio.ended &&
         audio.readyState >= 2
       ) {
         const audioSceneT = audio.currentTime * 1000;
         if (audioSceneT < scene.duration_ms) {
-          nextT = state.sceneStartTime + audioSceneT;
+          nextT = Math.max(currentT, state.sceneStartTime + audioSceneT);
+        }
+      }
+
+      // If audio has finished, smoothly transition to next scene once a clean pause has elapsed
+      if (
+        audio &&
+        audio.duration &&
+        (audio.ended || audio.currentTime >= audio.duration - 0.08)
+      ) {
+        const audioEndBufferMs = (audio.duration * 1000) + 700;
+        if (state.localT >= audioEndBufferMs && state.sceneIndex < currentLesson.scenes.length - 1) {
+          const nextSceneStart = getSceneStartTime(currentLesson, state.sceneIndex + 1);
+          if (nextT < nextSceneStart) {
+            nextT = nextSceneStart;
+          }
         }
       }
 
@@ -249,20 +265,8 @@ export function usePlayer(lesson: Lesson, autoPlay = false, speed = 1): UsePlaye
       // Check if scene transition occurred
       const nextState = getTimelineState(currentLesson, nextT);
       if (nextState.sceneIndex !== state.sceneIndex) {
-        // Advance to next scene's audio track
+        // Advance to next scene's audio track cleanly
         playAudioForScene(nextState.sceneIndex, nextState.localT / 1000);
-      } else if (
-        audio &&
-        audio.paused &&
-        !audio.ended &&
-        isPlayingRef.current &&
-        !audioBlockedRef.current
-      ) {
-        // Resume audio if it was temporarily paused or ready
-        const maxAudioMs = audio.duration ? audio.duration * 1000 : scene.duration_ms;
-        if (nextState.localT < maxAudioMs) {
-          audio.play().catch(() => {});
-        }
       }
 
       setT(nextT);

@@ -11,10 +11,12 @@ import { SettingsModal } from './SettingsModal';
 import { useSettings } from '../context/useSettings';
 import { Blu } from '../mascot/Blu';
 import { getAnchor } from '../mascot/anchors';
-import { apiRevoiceLesson, apiGetVoices, apiExportLesson, triggerFileDownload, API_BASE_URL } from '../api/lessonApi';
+import { apiRevoiceLesson, apiGetVoices, apiExportLesson, apiGenerateLesson, triggerFileDownload, API_BASE_URL } from '../api/lessonApi';
+import { VictoryModal } from '../components/VictoryModal';
 import { getSceneStartTime } from './timeline';
 import { getFontFamilyForLanguage, LANGUAGE_LABELS } from '../utils/fonts';
 import { getInitialQuality, type QualityMode } from '../utils/quality';
+
 
 interface PlayerShellProps {
   lesson: Lesson;
@@ -42,11 +44,42 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   const [exportedVideoUrl, setExportedVideoUrl] = useState<string | null>(null);
   const [exportedSrtUrl, setExportedSrtUrl] = useState<string | null>(null);
   const [showVideoModal, setShowVideoModal] = useState(false);
+  const [isSimplerLoading, setIsSimplerLoading] = useState(false);
+  const [showVictoryModal, setShowVictoryModal] = useState(false);
   const [voiceStatuses, setVoiceStatuses] = useState<Record<string, string>>(() => {
     return (lesson as any).voices || { [lesson.language]: 'ready' };
   });
   const [quality] = useState<QualityMode>(getInitialQuality);
   const { settings } = useSettings();
+
+  const handleExplainSimpler = async () => {
+    if (isSimplerLoading) return;
+    try {
+      setIsSimplerLoading(true);
+      setRevoiceStatus('Regenerating lesson with intuitive analogies...');
+      const simplerLesson = await apiGenerateLesson({
+        topic: lesson.title,
+        level: 'beginner',
+        language: lesson.language,
+        target_seconds: Math.min(90, Math.round(totalDuration / 1000) || 90),
+        voice: settings.voice,
+        local_context: true,
+        simpler: true,
+      });
+      if (onLessonChange) {
+        onLessonChange(simplerLesson);
+      }
+      setReadyToast('✨ Simplified lesson ready with real-world analogies!');
+      setTimeout(() => setReadyToast(null), 4000);
+    } catch (err) {
+      console.error('Failed to simplify:', err);
+      setRevoiceError('Failed to generate simpler lesson.');
+    } finally {
+      setIsSimplerLoading(false);
+      setRevoiceStatus(null);
+    }
+  };
+
 
   const {
     T,
@@ -273,6 +306,12 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
   const langInfo = LANGUAGE_LABELS[lesson.language] || { name: lesson.language, nativeName: lesson.language };
   const isLessonFinished = !isCapture && totalDuration > 0 && T >= totalDuration - 250 && !isPlaying;
 
+  useEffect(() => {
+    if (isLessonFinished && !showVictoryModal) {
+      setShowVictoryModal(true);
+    }
+  }, [isLessonFinished, showVictoryModal]);
+
   // Headless 1280x720 capture view for Playwright & FFmpeg export
   if (isCapture) {
     return (
@@ -329,7 +368,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
         width: '100vw',
         height: '100vh',
         maxHeight: '100vh',
-        background: '#040711',
+        background: 'var(--bg-gradient, radial-gradient(ellipse at 50% -10%, #1d3a72 0%, #102144 45%, #0c1833 100%))',
         color: '#f8fafc',
         fontFamily: getFontFamilyForLanguage(lesson.language, settings.dyslexia),
         overflow: 'hidden',
@@ -345,13 +384,14 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'rgba(10, 15, 29, 0.95)',
-          borderBottom: '1px solid rgba(51, 65, 85, 0.5)',
+          background: 'var(--navbar-bg, rgba(14, 28, 58, 0.95))',
+          borderBottom: '1px solid var(--panel-border, rgba(148, 163, 184, 0.2))',
           backdropFilter: 'blur(10px)',
           zIndex: 20,
           flexShrink: 0,
         }}
       >
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           {onBackToInput && (
             <button
@@ -501,6 +541,31 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             {Math.round(localT / 1000)}s / {Math.round(sceneDuration / 1000)}s
           </div>
 
+          {/* Explain Simpler Adaptive Action */}
+          <button
+            id="btn-explain-simpler"
+            onClick={handleExplainSimpler}
+            disabled={isSimplerLoading}
+            style={{
+              background: 'rgba(56, 189, 248, 0.12)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              color: '#38bdf8',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: isSimplerLoading ? 'wait' : 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              transition: 'all 0.15s ease',
+            }}
+            title="Re-narrate this concept with everyday analogies and intuitive real-world examples"
+          >
+            <span>💡</span>
+            <span>{isSimplerLoading ? 'Simplifying...' : 'Explain Simpler'}</span>
+          </button>
+
           <button
             id="btn-header-settings"
             onClick={() => setShowSettings(true)}
@@ -522,6 +587,7 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
             <span>⚙️</span>
             <span>{settings.speed}x</span>
           </button>
+
         </div>
       </header>
 
@@ -1320,6 +1386,22 @@ export const PlayerShell: React.FC<PlayerShellProps> = ({
           </div>
         </div>
       )}
+
+      {/* Victory / Lesson Mastery Modal */}
+      {showVictoryModal && (
+        <VictoryModal
+          lesson={lesson}
+          onClose={() => setShowVictoryModal(false)}
+          onReplay={() => {
+            setShowVictoryModal(false);
+            replay();
+          }}
+          onExportMP4={handleExportMP4}
+          onRevoice={handleLanguageChange}
+          onBackToInput={onBackToInput}
+        />
+      )}
     </div>
   );
 };
+

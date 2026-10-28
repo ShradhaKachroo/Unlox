@@ -1,7 +1,9 @@
 # Blu Visual Teacher (Unlox)
 
-Offline hackathon educational video generator and interactive lesson player.
-Transforms coding and conceptual lesson JSON into smooth animated, narrated visual walkthroughs.
+Offline educational video generator and interactive lesson studio. Transforms coding and conceptual topics into smooth animated, narrated visual walkthroughs with an interactive mascot, execution memory diagrams, tactile sound effects, and multilingual support.
+
+> 📖 **Full Architectural & Engineering Documentation**: See [docs/PROJECT_DOCUMENTATION.md](file:///c:/Users/Asus/Unlox/docs/PROJECT_DOCUMENTATION.md) for complete component breakdowns, API references, schemas, and setup instructions.
+
 
 ## Offline Fonts & Typography
 

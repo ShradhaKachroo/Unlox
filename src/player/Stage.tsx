@@ -62,8 +62,8 @@ export const Stage: React.FC<StageProps> = ({ children }) => {
           position: 'relative',
           overflow: 'hidden',
           borderRadius: `${Math.max(6, 16 * scale)}px`,
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 40px rgba(15, 23, 42, 0.8)',
-          background: '#090d16',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 40px rgba(15, 23, 42, 0.5)',
+          background: 'var(--bg-color, #0e1c3a)',
         }}
       >
         <div
@@ -77,9 +77,10 @@ export const Stage: React.FC<StageProps> = ({ children }) => {
             top: 0,
             left: 0,
             overflow: 'hidden',
-            background: '#090d16',
+            background: 'var(--bg-color, #0e1c3a)',
           }}
         >
+
           {children}
         </div>
       </div>

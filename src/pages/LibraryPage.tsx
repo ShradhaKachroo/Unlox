@@ -34,13 +34,14 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
       style={{
         minHeight: '100vh',
         width: '100%',
-        background: 'radial-gradient(ellipse at 50% 10%, #0c1836 0%, #050813 70%, #020409 100%)',
+        background: 'transparent',
         color: '#f8fafc',
         fontFamily: '"Noto Sans", sans-serif',
         padding: '30px 24px',
         boxSizing: 'border-box',
       }}
     >
+
       <div style={{ maxWidth: '960px', margin: '0 auto' }}>
         {/* Navigation Bar */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
@@ -93,12 +94,13 @@ export const LibraryPage: React.FC<LibraryPageProps> = ({ onWatchLesson, onBack 
               minWidth: '240px',
               padding: '12px 16px',
               borderRadius: '10px',
-              background: '#090d16',
-              border: '1px solid #334155',
+              background: 'var(--input-bg, rgba(16, 32, 64, 0.88))',
+              border: '1px solid var(--input-border, rgba(148, 163, 184, 0.28))',
               color: '#f8fafc',
               fontSize: '14px',
               outline: 'none',
             }}
+
           />
 
           <div style={{ display: 'flex', gap: '6px', overflowX: 'auto' }}>
